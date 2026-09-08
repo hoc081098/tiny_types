@@ -2,8 +2,6 @@ import 'package:meta/meta.dart';
 
 @immutable
 sealed class Option<T extends Object> {
-  static const None _singletonNone = None._();
-
   const Option();
 
   const factory Option.some(T value) = Some<T>;
@@ -13,6 +11,8 @@ sealed class Option<T extends Object> {
   @useResult
   factory Option.fromNullable(T? value) =>
       value == null ? _singletonNone : Option.some(value);
+
+  static const None _singletonNone = None._();
 
   @useResult
   bool get isSome => this is Some<T>;
@@ -24,6 +24,8 @@ sealed class Option<T extends Object> {
     if (this case final Some<T> some) {
       action(some.value);
     }
+    // Return `this` to allow chaining of `onSome` with other operations.
+    // ignore: avoid_returning_this
     return this;
   }
 
@@ -31,6 +33,8 @@ sealed class Option<T extends Object> {
     if (this is None) {
       action();
     }
+    // Return `this` to allow chaining of `onSome` with other operations.
+    // ignore: avoid_returning_this
     return this;
   }
 
@@ -146,11 +150,12 @@ final class None extends Option<Never> {
 }
 
 extension ObjectToSome<T extends Object> on T {
-  // ignore: use_to_and_as_if_applicable
   @pragma('vm:always-consider-inlining')
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   @useResult
+  // Follow Arrow-kt style.
+  // ignore: use_to_and_as_if_applicable
   Some<T> some() => Some(this);
 }
 
