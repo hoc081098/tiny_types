@@ -3,6 +3,7 @@
 /// More dartdocs go here.
 library;
 
+export 'src/option.dart';
 export 'src/unit.dart';
 
 // TODO: Export any libraries intended for clients of this package.
