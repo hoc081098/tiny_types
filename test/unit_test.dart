@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:test/test.dart';
 import 'package:tiny_types/tiny_types.dart';
 
@@ -14,12 +12,12 @@ void main() {
       expect(unit1.hashCode == unit2.hashCode, isTrue);
     });
 
-    test('hashCode', ()  async{
+    test('hashCode', () async {
       expect(Unit.value.hashCode, 0);
       expect((await Unit.future).hashCode, 0);
     });
 
-    test('toString', () async{
+    test('toString', () async {
       expect(Unit.value.toString(), '()');
       expect((await Unit.future).toString(), '()');
     });

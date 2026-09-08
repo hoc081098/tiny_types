@@ -1,12 +1,16 @@
 import 'dart:async';
 
-/// Used instead of `void` as a return type for a function when no value is to be returned.
+import 'package:meta/meta.dart';
+
 /// It represents the absence of a meaningful return value.
+/// Used instead of `void` as a return type for a function when no value
+/// is to be returned.
 ///
 /// Read [this article](https://medium.com/flutter-community/the-curious-case-of-void-in-dart-f0535705e529)
 /// to understand why it is better to not use `void` and use [Unit] instead.
 ///
 /// There is only one value of type [Unit].
+@immutable
 final class Unit implements Comparable<Unit> {
   const Unit._();
 
