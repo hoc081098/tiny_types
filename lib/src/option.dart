@@ -60,10 +60,6 @@ sealed class Option<T extends Object> {
     };
   }
 
-  @useResult
-  Option<T> orElse(Option<T> Function() alternative) =>
-      isSome ? this : alternative();
-
   R fold<R>({
     required R Function(T value) ifSome,
     required R Function() ifNone,
@@ -81,6 +77,35 @@ sealed class Option<T extends Object> {
         ifSome: (v) => List<T>.unmodifiable([v]),
         ifNone: () => List<T>.unmodifiable([]),
       );
+}
+
+extension OrElseOptionExtension<T extends Object> on Option<T> {
+  @useResult
+  Option<T> orElse(Option<T> Function() alternative) =>
+      isSome ? this : alternative();
+}
+
+extension FlattenOptionExtension<T extends Object> on Option<Option<T>> {
+  @useResult
+  Option<T> flatten() => switch (this) {
+        Some(:final value) => value,
+        None() => Option._singletonNone._retag(),
+      };
+}
+
+extension CombineOptionExtension<T extends Object> on Option<T> {
+  @useResult
+  Option<T> combine(
+    Option<T> other,
+    T Function(T, T) combine,
+  ) =>
+      switch (this) {
+        Some(:final value) => switch (other) {
+            Some(value: final otherValue) => combine(value, otherValue).some(),
+            None() => Option._singletonNone._retag(),
+          },
+        None() => Option._singletonNone._retag(),
+      };
 }
 
 final class Some<T extends Object> extends Option<T> {
@@ -122,6 +147,9 @@ final class None extends Option<Never> {
 
 extension ObjectToSome<T extends Object> on T {
   // ignore: use_to_and_as_if_applicable
+  @pragma('vm:always-consider-inlining')
+  @pragma('vm:prefer-inline')
+  @pragma('dart2js:tryInline')
   @useResult
   Some<T> some() => Some(this);
 }
