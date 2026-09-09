@@ -3,12 +3,11 @@ description: >-
   Lightweight, focused utility types for Dart, including Option, Unit,
   non-empty collections, and practical utilities built around them.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/hoc081098/tiny_types
 
 environment:
   sdk: ^3.0.0
 
-# Add regular dependencies here.
 dependencies:
   meta: ^1.7.0
 
