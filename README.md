@@ -40,19 +40,48 @@ final message = doubled.fold(
 
 ## Unit
 
-`Unit` represents a single meaningful value when an operation has no useful
-result to return.
+`Unit` represents a successful result with no payload.
+
+### Why not `void`?
+
+In Dart, `void` does not mean that no object exists at runtime. It marks a
+result as meaningless and prevents callers from consuming it as an ordinary
+value. A `void` result cannot be read, compared, or transformed, or passed to
+an API that expects a meaningful value. The value produced by
+`await Future<void>` is equally unusable.
+
+There is another subtle difference: a `void Function()` can accept a function
+with any return type and silently discard its result.
+
+```dart
+int calculate() => 42;
+
+void Function() callback = calculate; // Valid; 42 is discarded.
+```
+
+That behavior is useful when a callback's result truly does not matter, but it
+does not model a single predictable result. A `Unit Function()` has a stricter
+contract: when it completes normally, it must return `Unit.value`.
 
 ```dart
 Future<Unit> saveSettings() async {
   await repository.save();
   return Unit.value;
 }
+
+Future<Option<Unit>> saveAndWrap() async {
+  final saved = await saveSettings();
+  return Option.some(saved);
+}
 ```
 
-It is useful for APIs where success itself matters but no additional value
-needs to be returned. Because `Unit` is a regular value, it can also be used as
-a type argument in other result types.
+Unlike `void`, `Unit.value` can be stored, passed, compared, and transformed.
+This makes types such as `Option<Unit>`, `Future<Unit>`, or
+`Result<Failure, Unit>` useful for representing success without inventing a
+payload.
+
+Prefer `void` or `Future<void>` when callers should discard the result. Use
+`Unit` when a no-payload result needs to remain a first-class value.
 
 ## Non-empty collections
 
