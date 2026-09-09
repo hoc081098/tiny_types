@@ -13,21 +13,20 @@ void main() {
         expect(option.isNone, isFalse);
       });
 
-      test('none returns the shared absent value', () {
-        final intOption = Option<int>.none();
-        final stringOption = Option<String>.none();
-        final concreteNone = None();
+      test('none supports canonical constant values', () {
+        const intOption = Option<int>.none();
+        const stringOption = Option<String>.none();
+        const concreteNone = None();
 
         expect(identical(intOption, stringOption), isTrue);
         expect(identical(intOption, concreteNone), isTrue);
-        expect(identical(concreteNone, None()), isTrue);
         expect(intOption.isSome, isFalse);
         expect(intOption.isNone, isTrue);
       });
 
       test('fromNullable selects some or none', () {
         expect(Option.fromNullable(42), const Some(42));
-        expect(Option<int>.fromNullable(null), same(None()));
+        expect(Option<int>.fromNullable(null), const None());
       });
     });
 
@@ -37,14 +36,14 @@ void main() {
         final receivedValues = <int>[];
 
         final result = option.onSome(receivedValues.add);
-        Option<int>.none().onSome(receivedValues.add);
+        const Option<int>.none().onSome(receivedValues.add);
 
         expect(receivedValues, [42]);
         expect(result, same(option));
       });
 
       test('onNone runs only for none and returns the same option', () {
-        final option = Option<int>.none();
+        const option = Option<int>.none();
         var callCount = 0;
 
         final result = option.onNone(() => callCount++);
@@ -64,7 +63,7 @@ void main() {
         }
 
         expect(const Option.some(21).map(mapper), const Some(42));
-        expect(Option<int>.none().map(mapper), same(None()));
+        expect(const Option<int>.none().map(mapper), const None());
         expect(callCount, 1);
       });
 
@@ -72,12 +71,12 @@ void main() {
         var callCount = 0;
         Option<double> reciprocal(int value) {
           callCount++;
-          return value == 0 ? Option.none() : Option.some(1 / value);
+          return value == 0 ? const Option.none() : Option.some(1 / value);
         }
 
         expect(const Option.some(2).flatMap(reciprocal), const Some(0.5));
-        expect(const Option.some(0).flatMap(reciprocal), same(None()));
-        expect(Option<int>.none().flatMap(reciprocal), same(None()));
+        expect(const Option.some(0).flatMap(reciprocal), const None());
+        expect(const Option<int>.none().flatMap(reciprocal), const None());
         expect(callCount, 2);
       });
 
@@ -90,8 +89,8 @@ void main() {
         }
 
         expect(option.filter(isPositive), same(option));
-        expect(const Option.some(-1).filter(isPositive), same(None()));
-        expect(Option<int>.none().filter(isPositive), same(None()));
+        expect(const Option.some(-1).filter(isPositive), const None());
+        expect(const Option<int>.none().filter(isPositive), const None());
         expect(callCount, 2);
       });
     });
@@ -111,7 +110,7 @@ void main() {
             return 'No value';
           },
         );
-        final noneResult = Option<int>.none().fold(
+        final noneResult = const Option<int>.none().fold(
           ifSome: (value) {
             someCallCount++;
             return 'Value: $value';
@@ -130,12 +129,12 @@ void main() {
 
       test('getOrNull converts absence to null', () {
         expect(const Option.some(42).getOrNull(), 42);
-        expect(Option<int>.none().getOrNull(), isNull);
+        expect(const Option<int>.none().getOrNull(), isNull);
       });
 
       test('toList creates an unmodifiable zero-or-one-element list', () {
         final someList = const Option.some(42).toList();
-        final noneList = Option<int>.none().toList();
+        final noneList = const Option<int>.none().toList();
 
         expect(someList, [42]);
         expect(noneList, isEmpty);
@@ -154,7 +153,7 @@ void main() {
         }
 
         expect(option.orElse(alternative), same(option));
-        expect(Option<int>.none().orElse(alternative), const Some(0));
+        expect(const Option<int>.none().orElse(alternative), const Some(0));
         expect(callCount, 1);
       });
 
@@ -164,12 +163,12 @@ void main() {
           const Some(42),
         );
         expect(
-          Option<Option<int>>.some(Option<int>.none()).flatten(),
-          same(None()),
+          const Option<Option<int>>.some(Option<int>.none()).flatten(),
+          const None(),
         );
         expect(
-          Option<Option<int>>.none().flatten(),
-          same(None()),
+          const Option<Option<int>>.none().flatten(),
+          const None(),
         );
       });
 
@@ -185,12 +184,12 @@ void main() {
           const Some(42),
         );
         expect(
-          const Option.some(20).combine(Option<int>.none(), add),
-          same(None()),
+          const Option.some(20).combine(const Option<int>.none(), add),
+          const None(),
         );
         expect(
-          Option<int>.none().combine(const Option.some(22), add),
-          same(None()),
+          const Option<int>.none().combine(const Option.some(22), add),
+          const None(),
         );
         expect(callCount, 1);
       });
@@ -206,7 +205,7 @@ void main() {
         const int? absent = null;
 
         expect(present.toOption(), const Some(42));
-        expect(absent.toOption(), same(None()));
+        expect(absent.toOption(), const None());
       });
     });
 
@@ -218,8 +217,8 @@ void main() {
             };
 
         expect(describe(const Option.some(42)), 'Some(42)');
-        expect(describe(Option<int>.none()), 'None');
-        expect(describe(None()), 'None');
+        expect(describe(const Option<int>.none()), 'None');
+        expect(describe(const None()), 'None');
       });
     });
 
@@ -234,8 +233,8 @@ void main() {
       });
 
       test('none values are equal and have the same hashCode', () {
-        final first = Option<int>.none();
-        final second = Option<String>.none();
+        const first = Option<int>.none();
+        const second = Option<String>.none();
 
         expect(first, second);
         expect(first.hashCode, second.hashCode);
@@ -243,7 +242,7 @@ void main() {
 
       test('toString identifies the option state', () {
         expect(const Option.some(42).toString(), 'Option.Some(42)');
-        expect(Option<int>.none().toString(), 'Option.None');
+        expect(const Option<int>.none().toString(), 'Option.None');
       });
     });
   });

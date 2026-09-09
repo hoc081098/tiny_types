@@ -37,12 +37,13 @@ sealed class Option<T extends Object> {
 
   /// Creates an option with no value.
   ///
-  /// All calls return the same [None] instance, regardless of [T].
+  /// This factory can be used in constant expressions. All [None] instances
+  /// are equal, but callers should not rely on object identity.
   ///
   /// ```dart
-  /// final Option<int> missingAnswer = Option.none();
+  /// const Option<int> missingAnswer = Option.none();
   /// ```
-  factory Option.none() => _singletonNone;
+  const factory Option.none() = None;
 
   /// Creates a [Some] for a non-null [value], or [None] for `null`.
   ///
@@ -53,7 +54,8 @@ sealed class Option<T extends Object> {
   factory Option.fromNullable(T? value) =>
       value == null ? _singletonNone : Option.some(value);
 
-  static const None _singletonNone = None._();
+  // Reuse one canonical instance for internally produced absent values.
+  static const None _singletonNone = None();
 
   /// Whether this option contains a value.
   ///
@@ -303,18 +305,15 @@ final class Some<T extends Object> extends Option<T> {
 /// The single absent [Option] value.
 ///
 /// All `None` values compare equal. Use [Option.none] to create a typed absent
-/// option, or invoke [None.new] when the concrete [None] type is needed. Both
-/// constructors return the same singleton instance.
+/// option, or invoke [None.new] when the concrete [None] type is needed.
 @immutable
 final class None extends Option<Never> {
-  /// Returns the singleton absent option.
+  /// Creates an absent option.
   ///
   /// ```dart
-  /// identical(None(), Option<int>.none()); // true
+  /// const None none = None();
   /// ```
-  factory None() => Option._singletonNone;
-
-  const None._() : super._();
+  const None() : super._();
 
   /// Whether [other] is a [None].
   @override
