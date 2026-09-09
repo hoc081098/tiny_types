@@ -15,6 +15,27 @@ void main() async {
 
   final result = await _saveSettings();
   _log('Settings saved: $result');
+
+  _reportScores([7, 3, 9]);
+  _reportScores([]);
+}
+
+void _reportScores(List<int> rawScores) {
+  final scores = rawScores.toNonEmptyListOrNone();
+
+  final report = scores.fold(
+    ifSome: _describeScores,
+    ifNone: () => 'No scores recorded',
+  );
+  _log(report);
+}
+
+String _describeScores(NonEmptyList<int> scores) {
+  // `head`, `reduce`, and `min` cannot fail for a non-empty list.
+  final total = scores.reduce((left, right) => left + right);
+  final labels = scores.map((score) => 'score: $score');
+
+  return '${labels.head}, lowest: ${scores.min()}, total: $total';
 }
 
 String? _readName() {

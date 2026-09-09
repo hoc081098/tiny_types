@@ -9,7 +9,8 @@ Dart applications without requiring a full functional programming library.
 
 - `Option<T>` — represents the presence or absence of a value.
 - `Unit` — represents a meaningful value when no data needs to be returned.
-- `NonEmptyCollection<T>` — common abstraction for collections guaranteed to contain at least one element.
+- `NonEmptyCollection<T>` — common abstraction for collections guaranteed
+  to contain at least one element.
 - `NonEmptyList<T>` — a list guaranteed to contain at least one element.
 - `NonEmptySet<T>` — a set guaranteed to contain at least one element.
 - Related constructors, transformations, extensions, and utility functions.
@@ -86,8 +87,6 @@ Prefer `void` or `Future<void>` when callers should discard the result. Use
 
 ## Non-empty collections
 
-TBD - Unimplemented.
-
 Non-empty collection types guarantee at the type level that at least one
 element exists.
 
@@ -108,6 +107,90 @@ void sendNotifications(NonEmptyList<User> recipients) {
 
 instead of accepting a regular `List<User>` and validating it at runtime at
 every call site.
+
+### Not a `List`, not a `Set`
+
+Both types are `Iterable<T>`, and neither implements `List<T>` or `Set<T>` on
+purpose. In Dart those interfaces declare mutating members, so an immutable
+collection can only implement them by throwing at run time, which would put
+the invariant back to something a call site can only discover by crashing.
+
+```dart
+final NonEmptyList<User> users = ...;
+
+users.add(newUser); // Does not compile at all.
+```
+
+Only operations that preserve non-emptiness are declared on the types
+themselves. Anything that can produce an empty result goes through a view:
+`asList()` and `asSet()` return an unmodifiable view in constant time, while
+`toList()` and `toSet()` return a modifiable copy.
+
+```dart
+render(users.asList()); // For an API that needs a `List<User>`.
+users.asList().sublist(1); // Possibly empty, so it is a plain `List`.
+tags.asSet().difference(banned); // Possibly empty, so it is a plain `Set`.
+```
+
+New collections are derived with `plus`, `plusAll`, or `operator +`.
+
+`NonEmptyCollection<T>` is a sealed type, so `NonEmptyList` and `NonEmptySet`
+are its only implementations and a switch over them is exhaustive.
+
+Because at least one element always exists, operations that are partial on a
+regular collection become total.
+
+```dart
+final scores = NonEmptyList.of(7, [3, 9]);
+
+scores.head; // 7, and it can never throw
+scores.reduce((left, right) => left + right); // 19
+scores.min(); // 3
+scores.maxBy((score) => -score); // 3
+```
+
+Transformations that cannot remove elements preserve non-emptiness.
+
+```dart
+final NonEmptyList<String> labels =
+    scores.map((score) => 'score: $score');
+
+final NonEmptyList<int> doubled =
+    scores.flatMap((score) => NonEmptyList.of(score, [score]));
+```
+
+### Converting from an existing collection
+
+A collection whose length is only known at runtime is converted with the
+`Iterable` extensions, which never throw away the empty case silently.
+
+```dart
+final List<User> selected = readSelection();
+
+final NonEmptyList<User>? orNull = selected.toNonEmptyListOrNull();
+final Option<NonEmptyList<User>> orNone = selected.toNonEmptyListOrNone();
+final NonEmptyList<User> orThrow = selected.toNonEmptyListOrThrow();
+```
+
+`toNonEmptySetOrNull`, `toNonEmptySetOrNone`, and `toNonEmptySetOrThrow` do the
+same for `NonEmptySet<T>`.
+
+### Choosing between the two
+
+Use `NonEmptyList<T>` to preserve order and duplicates, and `NonEmptySet<T>`
+for unique elements. `NonEmptyCollection<T>` is the shared abstraction to
+accept either one.
+
+```dart
+int total(NonEmptyCollection<int> scores) =>
+    scores.reduce((left, right) => left + right);
+
+total(NonEmptyList.of(1, [2, 2])); // 5
+total(NonEmptySet.of(1, [2, 2])); // 3
+```
+
+Operations that cannot preserve uniqueness or order, such as `map` and
+`flatMap`, always return a `NonEmptyList<T>`.
 
 ## Design goals
 

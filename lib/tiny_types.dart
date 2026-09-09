@@ -2,5 +2,6 @@
 /// non-empty collections, and practical utilities built around them.
 library;
 
+export 'src/non_empty_collection.dart';
 export 'src/option.dart';
 export 'src/unit.dart';
