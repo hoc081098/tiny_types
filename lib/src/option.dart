@@ -303,13 +303,18 @@ final class Some<T extends Object> extends Option<T> {
 /// The single absent [Option] value.
 ///
 /// All `None` values compare equal. Use [Option.none] to create a typed absent
-/// option, or [None.value] when the concrete [None] type is needed.
+/// option, or invoke [None.new] when the concrete [None] type is needed. Both
+/// constructors return the same singleton instance.
 @immutable
 final class None extends Option<Never> {
-  const None._() : super._();
+  /// Returns the singleton absent option.
+  ///
+  /// ```dart
+  /// identical(None(), Option<int>.none()); // true
+  /// ```
+  factory None() => Option._singletonNone;
 
-  /// The singleton [None] instance.
-  static None get value => Option._singletonNone;
+  const None._() : super._();
 
   /// Whether [other] is a [None].
   @override

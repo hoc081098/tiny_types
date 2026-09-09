@@ -16,16 +16,18 @@ void main() {
       test('none returns the shared absent value', () {
         final intOption = Option<int>.none();
         final stringOption = Option<String>.none();
+        final concreteNone = None();
 
         expect(identical(intOption, stringOption), isTrue);
-        expect(identical(intOption, None.value), isTrue);
+        expect(identical(intOption, concreteNone), isTrue);
+        expect(identical(concreteNone, None()), isTrue);
         expect(intOption.isSome, isFalse);
         expect(intOption.isNone, isTrue);
       });
 
       test('fromNullable selects some or none', () {
         expect(Option.fromNullable(42), const Some(42));
-        expect(Option<int>.fromNullable(null), same(None.value));
+        expect(Option<int>.fromNullable(null), same(None()));
       });
     });
 
@@ -62,7 +64,7 @@ void main() {
         }
 
         expect(const Option.some(21).map(mapper), const Some(42));
-        expect(Option<int>.none().map(mapper), same(None.value));
+        expect(Option<int>.none().map(mapper), same(None()));
         expect(callCount, 1);
       });
 
@@ -74,8 +76,8 @@ void main() {
         }
 
         expect(const Option.some(2).flatMap(reciprocal), const Some(0.5));
-        expect(const Option.some(0).flatMap(reciprocal), same(None.value));
-        expect(Option<int>.none().flatMap(reciprocal), same(None.value));
+        expect(const Option.some(0).flatMap(reciprocal), same(None()));
+        expect(Option<int>.none().flatMap(reciprocal), same(None()));
         expect(callCount, 2);
       });
 
@@ -88,8 +90,8 @@ void main() {
         }
 
         expect(option.filter(isPositive), same(option));
-        expect(const Option.some(-1).filter(isPositive), same(None.value));
-        expect(Option<int>.none().filter(isPositive), same(None.value));
+        expect(const Option.some(-1).filter(isPositive), same(None()));
+        expect(Option<int>.none().filter(isPositive), same(None()));
         expect(callCount, 2);
       });
     });
@@ -163,11 +165,11 @@ void main() {
         );
         expect(
           Option<Option<int>>.some(Option<int>.none()).flatten(),
-          same(None.value),
+          same(None()),
         );
         expect(
           Option<Option<int>>.none().flatten(),
-          same(None.value),
+          same(None()),
         );
       });
 
@@ -184,11 +186,11 @@ void main() {
         );
         expect(
           const Option.some(20).combine(Option<int>.none(), add),
-          same(None.value),
+          same(None()),
         );
         expect(
           Option<int>.none().combine(const Option.some(22), add),
-          same(None.value),
+          same(None()),
         );
         expect(callCount, 1);
       });
@@ -204,7 +206,20 @@ void main() {
         const int? absent = null;
 
         expect(present.toOption(), const Some(42));
-        expect(absent.toOption(), same(None.value));
+        expect(absent.toOption(), same(None()));
+      });
+    });
+
+    group('pattern matching', () {
+      test('supports an exhaustive switch over some and none', () {
+        String describe(Option<int> option) => switch (option) {
+              Some(:final value) => 'Some($value)',
+              None() => 'None',
+            };
+
+        expect(describe(const Option.some(42)), 'Some(42)');
+        expect(describe(Option<int>.none()), 'None');
+        expect(describe(None()), 'None');
       });
     });
 
