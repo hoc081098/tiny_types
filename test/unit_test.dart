@@ -3,13 +3,18 @@ import 'package:tiny_types/tiny_types.dart';
 
 void main() {
   group('Unit', () {
-    test('should equal to each other', () async {
-      final unit1 = Unit.value;
+    test('has one shared value', () async {
+      const unit1 = Unit.value;
       final unit2 = await Unit.future;
 
       expect(identical(unit1, unit2), isTrue);
       expect(unit1 == unit2, isTrue);
       expect(unit1.hashCode == unit2.hashCode, isTrue);
+    });
+
+    test('exposes one shared completed future', () {
+      expect(identical(Unit.future, Unit.future), isTrue);
+      expect(Unit.future, completion(same(Unit.value)));
     });
 
     test('hashCode', () async {
@@ -23,7 +28,7 @@ void main() {
     });
 
     test('compareTo', () async {
-      final unit1 = Unit.value;
+      const unit1 = Unit.value;
       final unit2 = await Unit.future;
       expect(unit1.compareTo(unit2), 0);
     });
