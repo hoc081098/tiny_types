@@ -18,7 +18,7 @@ Dart applications without requiring a full functional programming library.
 
 ```yaml
 dependencies:
-  tiny_types: ^<latest-version>
+  tiny_types: ^1.0.0
 ```
 
 ## Option
@@ -31,6 +31,11 @@ final Option<int> some = Option.some(42);
 final Option<int> none = Option.none();
 
 final doubled = some.map((value) => value * 2);
+
+final message = doubled.fold(
+  ifSome: (value) => 'The answer is $value',
+  ifNone: () => 'No answer',
+);
 ```
 
 ## Unit
@@ -39,16 +44,19 @@ final doubled = some.map((value) => value * 2);
 result to return.
 
 ```dart
-Either<Failure, Unit> saveSettings() {
-  // ...
-  return const Right(unit);
+Future<Unit> saveSettings() async {
+  await repository.save();
+  return Unit.value;
 }
 ```
 
-It is useful for APIs where success itself matters, but no additional value
-needs to be returned.
+It is useful for APIs where success itself matters but no additional value
+needs to be returned. Because `Unit` is a regular value, it can also be used as
+a type argument in other result types.
 
 ## Non-empty collections
+
+TBD - Unimplemented.
 
 Non-empty collection types guarantee at the type level that at least one
 element exists.
@@ -97,6 +105,9 @@ Either<L, R> -> Option<R>
 Option<R> -> Either<L, R>
 Either<L, Unit>
 ```
+
+See the complete runnable
+[`tiny_types` example](example/tiny_types_example.dart).
 
 ## License
 
