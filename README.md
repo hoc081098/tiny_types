@@ -142,5 +142,7 @@ See the complete runnable
 ## License
 
 ```
+MIT License
 
+Copyright (c) 2026 Petrus Nguyễn Thái Học
 ```
