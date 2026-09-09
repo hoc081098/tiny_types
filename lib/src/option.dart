@@ -4,7 +4,8 @@ import 'package:meta/meta.dart';
 ///
 /// `Option<T>` makes absence explicit without exposing `null` to the rest of a
 /// computation. Use [map], [flatMap], and [filter] to transform a present
-/// value, then use [fold] or [getOrNull] when a concrete result is needed.
+/// value, then use [fold], [OptionFallbackExtension.getOrElse], or [getOrNull]
+/// when a concrete result is needed.
 ///
 /// The type parameter [T] must be non-nullable. To convert a nullable value,
 /// use [Option.fromNullable] or [NullableObjectToOption.toOption].
@@ -214,8 +215,28 @@ sealed class Option<T extends Object> {
       );
 }
 
-/// Adds lazy fallback selection to [Option].
-extension OrElseOptionExtension<T extends Object> on Option<T> {
+/// Adds lazy fallback operations to [Option].
+extension OptionFallbackExtension<T extends Object> on Option<T> {
+  // Keep this API extension-based. A None object's reified supertype is
+  // Option<Never>, so an instance method accepting T Function() would check a
+  // fallback against Never Function() at runtime.
+
+  /// Returns the contained value, or a lazily computed fallback for [None].
+  ///
+  /// [defaultValue] is not called when this option is [Some]. For [None], it
+  /// is called exactly once and its result is returned. Any exception thrown
+  /// by [defaultValue] is allowed to propagate.
+  ///
+  /// ```dart
+  /// Option.some(42).getOrElse(() => 0); // 42
+  /// Option<int>.none().getOrElse(() => 0); // 0
+  /// ```
+  @useResult
+  T getOrElse(T Function() defaultValue) => switch (this) {
+        Some(value: final v) => v,
+        None() => defaultValue(),
+      };
+
   /// Returns this option when it is [Some], otherwise returns [alternative].
   ///
   /// [alternative] is evaluated lazily, so it is not called when a value is

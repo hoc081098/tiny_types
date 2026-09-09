@@ -38,7 +38,7 @@ member with Dartdoc and keep imports ordered; use relative imports inside
 
 Use `@useResult` when ignoring a synchronous API's return value is always a
 mistake. This includes `Option`-returning transformations, boolean state
-getters, and value conversions such as `getOrNull` and `toList`.
+getters, and value conversions such as `getOrElse`, `getOrNull`, and `toList`.
 
 Do not use `@useResult` on:
 

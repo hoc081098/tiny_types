@@ -31,6 +31,7 @@ final Option<int> some = Option.some(42);
 final Option<int> none = Option.none();
 
 final doubled = some.map((value) => value * 2);
+final value = doubled.getOrElse(() => 0); // 84
 
 final message = doubled.fold(
   ifSome: (value) => 'The answer is $value',

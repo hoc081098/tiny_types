@@ -143,6 +143,34 @@ void main() {
         expect(const Option<int>.none().getOrNull(), isNull);
       });
 
+      test('getOrElse evaluates its default only for none', () {
+        var callCount = 0;
+
+        int defaultValue() {
+          callCount++;
+          return 0;
+        }
+
+        expect(const Option.some(42).getOrElse(defaultValue), 42);
+        expect(callCount, 0);
+
+        expect(const Option<int>.none().getOrElse(defaultValue), 0);
+        expect(callCount, 1);
+      });
+
+      test('getOrElse propagates exceptions from its default', () {
+        final error = StateError('No default value');
+
+        expect(
+          () => const Option<int>.none().getOrElse(() => throw error),
+          throwsA(same(error)),
+        );
+        expect(
+          const Option.some(42).getOrElse(() => throw error),
+          42,
+        );
+      });
+
       test('toList creates an unmodifiable zero-or-one-element list', () {
         final someList = const Option.some(42).toList();
         final noneList = const Option<int>.none().toList();
