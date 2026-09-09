@@ -127,6 +127,17 @@ void main() {
         expect(noneCallCount, 1);
       });
 
+      test('fold supports side-effect-only callbacks', () {
+        var observed = 0;
+
+        const Option.some(42).fold<void>(
+          ifSome: (value) => observed = value,
+          ifNone: () => observed = -1,
+        );
+
+        expect(observed, 42);
+      });
+
       test('getOrNull converts absence to null', () {
         expect(const Option.some(42).getOrNull(), 42);
         expect(const Option<int>.none().getOrNull(), isNull);

@@ -34,6 +34,25 @@ switches, and trailing commas in multiline declarations. Document every public
 member with Dartdoc and keep imports ordered; use relative imports inside
 `lib/src/` and package imports from tests or consumers.
 
+### Result-use annotations
+
+Use `@useResult` when ignoring a synchronous API's return value is always a
+mistake. This includes `Option`-returning transformations, boolean state
+getters, and value conversions such as `getOrNull` and `toList`.
+
+Do not use `@useResult` on:
+
+- Methods returning `Future<Option<...>>`; callers may only need to await them.
+- Fire-and-forget side-effect helpers whose returned value exists only for
+  chaining, such as `onSome` and `onNone`.
+- Methods with a generic result that may be `void`, such as `fold` or a future
+  `when` API. These methods may intentionally be used as statements when their
+  callbacks perform side effects.
+- Constructors or factory constructors.
+
+When adding an annotation, include analyzer-clean coverage for both using and,
+where intentionally supported, ignoring the result.
+
 ## Testing Guidelines
 
 Tests use `package:test`. Group cases by type or feature and name tests after

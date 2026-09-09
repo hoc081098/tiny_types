@@ -172,7 +172,8 @@ sealed class Option<T extends Object> {
   /// Produces a value by handling both possible states of this option.
   ///
   /// Exactly one callback is invoked: [ifSome] with the contained value, or
-  /// [ifNone] when no value is present.
+  /// [ifNone] when no value is present. [R] may be `void`, so this method can
+  /// also be used as a statement when both callbacks perform side effects.
   ///
   /// ```dart
   /// final message = Option.some(42).fold(
@@ -180,7 +181,6 @@ sealed class Option<T extends Object> {
   ///   ifNone: () => 'No value',
   /// );
   /// ```
-  @useResult
   R fold<R>({
     required R Function(T value) ifSome,
     required R Function() ifNone,
