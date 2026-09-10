@@ -323,7 +323,7 @@ final class Some<T extends Object> extends Option<T> {
   String toString() => 'Option.Some($value)';
 }
 
-/// The single absent [Option] value.
+/// The absent [Option] variant.
 ///
 /// All `None` values compare equal. Use [Option.none] to create a typed absent
 /// option, or invoke [None.new] when the concrete [None] type is needed.
@@ -336,13 +336,16 @@ final class None extends Option<Never> {
   /// ```
   const None() : super._();
 
+  // The UTF-8 bytes for `None`, used as a fixed non-zero variant hash.
+  static const int _hashCode = 0x4e6f6e65;
+
   /// Whether [other] is a [None].
   @override
   bool operator ==(Object other) => identical(this, other) || other is None;
 
-  /// The hash code shared by all absent options.
+  /// The non-zero hash code shared by all absent options.
   @override
-  int get hashCode => 0;
+  int get hashCode => _hashCode;
 
   /// Returns `Option.None`.
   @override
