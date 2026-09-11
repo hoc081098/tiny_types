@@ -166,8 +166,9 @@ void main() {
         expect(result.head, isFalse);
       });
 
-      test('mapIndexed exposes the iteration index', () {
-        final result = NonEmptyList.of('a', const ['b']).mapIndexed(
+      test('mapIndexedToNonEmptyList exposes the iteration index', () {
+        final result =
+            NonEmptyList.of('a', const ['b']).mapIndexedToNonEmptyList(
           (index, letter) => '$index$letter',
         );
 
@@ -261,30 +262,6 @@ void main() {
 
         expect(numbers, [1, 2]);
         expect(letters, ['a', 'b']);
-      });
-    });
-
-    group('queries', () {
-      test('min and max compare elements', () {
-        final list = NonEmptyList.of(3, const [1, 2]);
-
-        expect(list.min(), 1);
-        expect(list.max(), 3);
-        expect(NonEmptyList.of(1).min(), 1);
-      });
-
-      test('minBy and maxBy compare selected keys', () {
-        final list = NonEmptyList.of('one', const ['three', 'go']);
-
-        expect(list.minBy((word) => word.length), 'go');
-        expect(list.maxBy((word) => word.length), 'three');
-      });
-
-      test('minBy and maxBy keep the first of equal keys', () {
-        final list = NonEmptyList.of('one', const ['two']);
-
-        expect(list.minBy((word) => word.length), 'one');
-        expect(list.maxBy((word) => word.length), 'one');
       });
     });
 

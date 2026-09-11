@@ -9,7 +9,7 @@ Dart applications without requiring a full functional programming library.
 
 - `Option<T>` — represents the presence or absence of a value.
 - `Unit` — represents a meaningful value when no data needs to be returned.
-- `NonEmptyCollection<T>` — common abstraction for collections guaranteed
+- `NonEmptyIterable<T>` — common abstraction for iterables guaranteed
   to contain at least one element.
 - `NonEmptyList<T>` — a list guaranteed to contain at least one element.
 - `NonEmptySet<T>` — a set guaranteed to contain at least one element.
@@ -133,7 +133,7 @@ tags.asSet().difference(banned); // Possibly empty, so it is a plain `Set`.
 
 New collections are derived with `plus`, `plusAll`, or `operator +`.
 
-`NonEmptyCollection<T>` is a sealed type, so `NonEmptyList` and `NonEmptySet`
+`NonEmptyIterable<T>` is a sealed type, so `NonEmptyList` and `NonEmptySet`
 are its only implementations and a switch over them is exhaustive.
 
 Because at least one element always exists, operations that are partial on a
@@ -144,8 +144,6 @@ final scores = NonEmptyList.of(7, [3, 9]);
 
 scores.head; // 7, and it can never throw
 scores.reduce((left, right) => left + right); // 19
-scores.min(); // 3
-scores.maxBy((score) => -score); // 3
 ```
 
 Inherited `Iterable` transformations keep Dart's standard lazy behavior and
@@ -178,9 +176,15 @@ final NonEmptyList<int> doubled =
 ```
 
 The available materializing transformations are `mapToNonEmptyList`,
-`mapToNonEmptySet`, `mapIndexed`, `mapIndexedToNonEmptySet`, `flatMap`, and
-`flatMapToNonEmptySet`. The `flatMap` variants require each callback result to
-be a `NonEmptyCollection`, so the combined result cannot be empty.
+`mapToNonEmptySet`, `mapIndexedToNonEmptyList`,
+`mapIndexedToNonEmptySet`, `flatMap`, and `flatMapToNonEmptySet`. The `flatMap`
+variants require each callback result to be a `NonEmptyIterable`, so the
+combined result cannot be empty.
+
+The explicit `mapIndexedToNonEmptyList` name avoids changing the lazy
+`mapIndexed` semantics supplied by `package:collection` when that extension is
+imported. `package:collection` does not define `flatMap`, so `flatMap` can keep
+the Arrow-style name without shadowing one of its iterable extensions.
 
 ### Converting from an existing collection
 
@@ -201,20 +205,20 @@ same for `NonEmptySet<T>`.
 ### Choosing between the two
 
 Use `NonEmptyList<T>` to preserve order and duplicates, and `NonEmptySet<T>`
-for unique elements. `NonEmptyCollection<T>` is the shared abstraction to
+for unique elements. `NonEmptyIterable<T>` is the shared abstraction to
 accept either one.
 
 ```dart
-int total(NonEmptyCollection<int> scores) =>
+int total(NonEmptyIterable<int> scores) =>
     scores.reduce((left, right) => left + right);
 
 total(NonEmptyList.of(1, [2, 2])); // 5
 total(NonEmptySet.of(1, [2, 2])); // 3
 ```
 
-`mapToNonEmptyList`, `mapIndexed`, and `flatMap` preserve iteration order and
-duplicates. Their `ToNonEmptySet` counterparts preserve first-occurrence order
-and collapse equal values.
+`mapToNonEmptyList`, `mapIndexedToNonEmptyList`, and `flatMap` preserve
+iteration order and duplicates. Their `ToNonEmptySet` counterparts preserve
+first-occurrence order and collapse equal values.
 
 ## Design goals
 

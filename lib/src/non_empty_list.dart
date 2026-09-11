@@ -1,6 +1,6 @@
-part of 'non_empty_collection.dart';
+part of 'non_empty_iterable.dart';
 
-/// An immutable [NonEmptyCollection] that preserves element order and
+/// An immutable [NonEmptyIterable] that preserves element order and
 /// duplicates.
 ///
 /// `NonEmptyList<T>` is an [Iterable] but deliberately not a [List]: the [List]
@@ -22,7 +22,7 @@ part of 'non_empty_collection.dart';
 /// sendNotifications(NonEmptyList.of('ada@example.com'));
 /// ```
 @immutable
-final class NonEmptyList<T> extends NonEmptyCollection<T> {
+final class NonEmptyList<T> extends NonEmptyIterable<T> {
   const NonEmptyList._(this._elements) : super._();
 
   /// Creates a list containing [head] followed by [tail].
@@ -142,6 +142,10 @@ final class NonEmptyList<T> extends NonEmptyCollection<T> {
   @override
   @useResult
   NonEmptyList<T> toNonEmptyList() => this;
+
+  @override
+  @useResult
+  NonEmptySet<T> toNonEmptySet() => NonEmptySet._(_elements.toSet());
 
   /// Whether [other] is a `NonEmptyList` with equal elements in equal order.
   @override

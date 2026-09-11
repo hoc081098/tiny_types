@@ -9,7 +9,7 @@ part 'non_empty_set.dart';
 
 /// An [Iterable] that always contains at least one element.
 ///
-/// `NonEmptyCollection<T>` moves the "at least one element" requirement into
+/// `NonEmptyIterable<T>` moves the "at least one element" requirement into
 /// the type system, so an API can demand it once instead of validating it at
 /// every call site. It also turns the partial operations of [Iterable] into
 /// total ones: [Iterable.first], [Iterable.last], and [Iterable.reduce] can
@@ -32,19 +32,20 @@ part 'non_empty_set.dart';
 /// Inherited transformations such as [map], [where], and [expand] keep the
 /// standard lazy [Iterable] semantics. Their return type no longer represents
 /// the non-empty guarantee, and filtering or expanding may actually produce no
-/// elements. Non-empty-preserving transformations such as [mapIndexed] and
-/// [flatMap] eagerly materialize a [NonEmptyList]. A `ToNonEmptySet` variant is
-/// available when equal results should be collapsed. [plus] and [plusAll]
-/// return the same kind of collection as their receiver.
+/// elements. Non-empty-preserving transformations such as
+/// [mapIndexedToNonEmptyList] and [flatMap] eagerly materialize a
+/// [NonEmptyList]. A `ToNonEmptySet` variant is available when equal results
+/// should be collapsed. [plus] and [plusAll] return the same kind of collection
+/// as their receiver.
 ///
 /// ```dart
-/// void notifyAll(NonEmptyCollection<String> recipients) {
+/// void notifyAll(NonEmptyIterable<String> recipients) {
 ///   // `head` and `reduce` cannot fail here.
 ///   print('Notifying ${recipients.head} and ${recipients.length - 1} more');
 /// }
 /// ```
-sealed class NonEmptyCollection<T> extends Iterable<T> {
-  const NonEmptyCollection._();
+sealed class NonEmptyIterable<T> extends Iterable<T> {
+  const NonEmptyIterable._();
 
   /// The first element of this collection.
   ///
@@ -72,7 +73,7 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// NonEmptyList.of(1).plus(2); // [1, 2]
   /// ```
   @useResult
-  NonEmptyCollection<T> plus(T element);
+  NonEmptyIterable<T> plus(T element);
 
   /// Returns a new collection with every value of [elements] appended.
   ///
@@ -80,7 +81,7 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// NonEmptyList.of(1).plusAll([2, 3]); // [1, 2, 3]
   /// ```
   @useResult
-  NonEmptyCollection<T> plusAll(Iterable<T> elements);
+  NonEmptyIterable<T> plusAll(Iterable<T> elements);
 
   /// Returns the elements of this collection without duplicates.
   ///
@@ -143,16 +144,17 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// Transforms every element with its iteration index into a
   /// [NonEmptyList].
   ///
-  /// The result is computed eagerly.
+  /// The result is computed eagerly. This name is deliberately distinct from
+  /// package:collection's lazy `mapIndexed` extension.
   ///
   /// ```dart
   /// NonEmptyList.of('a', ['b'])
-  ///     .mapIndexed(
+  ///     .mapIndexedToNonEmptyList(
   ///       (index, letter) => '$index$letter',
   ///     ); // ['0a', '1b']
   /// ```
   @useResult
-  NonEmptyList<R> mapIndexed<R>(
+  NonEmptyList<R> mapIndexedToNonEmptyList<R>(
     R Function(int index, T element) toElement,
   ) =>
       NonEmptyList._([
@@ -193,7 +195,7 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// ```
   @useResult
   NonEmptyList<R> flatMap<R>(
-    NonEmptyCollection<R> Function(T element) toElements,
+    NonEmptyIterable<R> Function(T element) toElements,
   ) =>
       NonEmptyList._([
         for (final element in this) ...toElements(element),
@@ -214,7 +216,7 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// ```
   @useResult
   NonEmptySet<R> flatMapToNonEmptySet<R>(
-    NonEmptyCollection<R> Function(T element) toElements,
+    NonEmptyIterable<R> Function(T element) toElements,
   ) =>
       NonEmptySet._(<R>{
         for (final element in this) ...toElements(element),
@@ -229,7 +231,7 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// // [(1, 'a'), (2, 'b')]
   /// ```
   @useResult
-  NonEmptyList<(T, R)> zip<R>(NonEmptyCollection<R> other) =>
+  NonEmptyList<(T, R)> zip<R>(NonEmptyIterable<R> other) =>
       zipWith(other, (element, otherElement) => (element, otherElement));
 
   /// Combines each element with the element of [other] at the same position.
@@ -246,7 +248,7 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// ```
   @useResult
   NonEmptyList<R> zipWith<R, U>(
-    NonEmptyCollection<U> other,
+    NonEmptyIterable<U> other,
     R Function(T element, U otherElement) combine,
   ) {
     final otherIterator = other.iterator;
@@ -260,47 +262,6 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
     return NonEmptyList._(combined);
   }
 
-  /// Returns the element with the smallest [selector] value.
-  ///
-  /// The first element wins when several elements share the smallest value.
-  ///
-  /// ```dart
-  /// NonEmptyList.of('one', ['three'])
-  ///     .minBy((word) => word.length); // 'one'
-  /// ```
-  @useResult
-  T minBy<K extends Comparable<Object>>(K Function(T element) selector) =>
-      _extremeBy(selector, keepGreater: false);
-
-  /// Returns the element with the largest [selector] value.
-  ///
-  /// The first element wins when several elements share the largest value.
-  ///
-  /// ```dart
-  /// NonEmptyList.of('one', ['three'])
-  ///     .maxBy((word) => word.length); // 'three'
-  /// ```
-  @useResult
-  T maxBy<K extends Comparable<Object>>(K Function(T element) selector) =>
-      _extremeBy(selector, keepGreater: true);
-
-  T _extremeBy<K extends Comparable<Object>>(
-    K Function(T element) selector, {
-    required bool keepGreater,
-  }) {
-    var best = head;
-    var bestKey = selector(best);
-    for (final element in skip(1)) {
-      final key = selector(element);
-      final comparison = key.compareTo(bestKey);
-      if (keepGreater ? comparison > 0 : comparison < 0) {
-        best = element;
-        bestKey = key;
-      }
-    }
-    return best;
-  }
-
   /// Returns these elements as a [NonEmptyList], preserving iteration order.
   ///
   /// Returns this object unchanged when it is already a [NonEmptyList].
@@ -310,7 +271,7 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// NonEmptySet.of(1, [2]).toNonEmptyList(); // [1, 2]
   /// ```
   @useResult
-  NonEmptyList<T> toNonEmptyList() => NonEmptyList._(toList());
+  NonEmptyList<T> toNonEmptyList();
 
   /// Returns these elements as a [NonEmptySet], discarding duplicates.
   ///
@@ -321,12 +282,12 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
   /// NonEmptyList.of(1, [2, 1]).toNonEmptySet(); // {1, 2}
   /// ```
   @useResult
-  NonEmptySet<T> toNonEmptySet() => NonEmptySet._(toSet());
+  NonEmptySet<T> toNonEmptySet();
 }
 
-/// Adds one-level flattening to nested non-empty collections.
-extension FlattenNonEmptyCollectionExtension<T>
-    on NonEmptyCollection<NonEmptyCollection<T>> {
+/// Adds one-level flattening to nested non-empty iterables.
+extension FlattenNonEmptyIterableExtension<T>
+    on NonEmptyIterable<NonEmptyIterable<T>> {
   /// Concatenates the nested collections into a single [NonEmptyList].
   ///
   /// ```dart
@@ -340,8 +301,8 @@ extension FlattenNonEmptyCollectionExtension<T>
   NonEmptyList<T> flatten() => flatMap((elements) => elements);
 }
 
-/// Adds pair splitting to non-empty collections of records.
-extension UnzipNonEmptyCollectionExtension<A, B> on NonEmptyCollection<(A, B)> {
+/// Adds pair splitting to non-empty iterables of records.
+extension UnzipNonEmptyIterableExtension<A, B> on NonEmptyIterable<(A, B)> {
   /// Splits the pairs into one collection per record field.
   ///
   /// ```dart
@@ -354,28 +315,4 @@ extension UnzipNonEmptyCollectionExtension<A, B> on NonEmptyCollection<(A, B)> {
         NonEmptyList._([for (final (first, _) in this) first]),
         NonEmptyList._([for (final (_, second) in this) second]),
       );
-}
-
-/// Adds total minimum and maximum queries to comparable elements.
-extension ComparableNonEmptyCollectionExtension<T extends Comparable<Object>>
-    on NonEmptyCollection<T> {
-  /// Returns the smallest element.
-  ///
-  /// Unlike [Iterable.reduce] on a plain iterable, this never throws.
-  ///
-  /// ```dart
-  /// NonEmptyList.of(3, [1, 2]).min(); // 1
-  /// ```
-  @useResult
-  T min() => reduce((left, right) => left.compareTo(right) <= 0 ? left : right);
-
-  /// Returns the largest element.
-  ///
-  /// Unlike [Iterable.reduce] on a plain iterable, this never throws.
-  ///
-  /// ```dart
-  /// NonEmptyList.of(3, [1, 2]).max(); // 3
-  /// ```
-  @useResult
-  T max() => reduce((left, right) => left.compareTo(right) >= 0 ? left : right);
 }

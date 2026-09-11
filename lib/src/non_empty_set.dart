@@ -1,6 +1,6 @@
-part of 'non_empty_collection.dart';
+part of 'non_empty_iterable.dart';
 
-/// An immutable [NonEmptyCollection] of unique elements.
+/// An immutable [NonEmptyIterable] of unique elements.
 ///
 /// `NonEmptySet<T>` is an [Iterable] but deliberately not a [Set]: the [Set]
 /// interface declares mutating members that an immutable set could only
@@ -10,7 +10,7 @@ part of 'non_empty_collection.dart';
 ///
 /// Elements keep their insertion order and duplicates are discarded.
 /// Inherited [Iterable] transformations remain lazy. Non-empty-preserving
-/// transformations on [NonEmptyCollection] materialize a list by default; use
+/// transformations on [NonEmptyIterable] materialize a list by default; use
 /// a `ToNonEmptySet` variant when equal results should be collapsed.
 ///
 /// Create one with [NonEmptySet.of] when the first element is known
@@ -22,7 +22,7 @@ part of 'non_empty_collection.dart';
 /// // {dart, types}
 /// ```
 @immutable
-final class NonEmptySet<T> extends NonEmptyCollection<T> {
+final class NonEmptySet<T> extends NonEmptyIterable<T> {
   const NonEmptySet._(this._elements) : super._();
 
   /// Creates a set containing [head] followed by the new values of [tail].
@@ -105,6 +105,10 @@ final class NonEmptySet<T> extends NonEmptyCollection<T> {
   @override
   @useResult
   Set<T> toSet() => _elements.toSet();
+
+  @override
+  @useResult
+  NonEmptyList<T> toNonEmptyList() => NonEmptyList._(_elements.toList());
 
   @override
   @useResult

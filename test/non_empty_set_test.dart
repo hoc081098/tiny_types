@@ -152,8 +152,9 @@ void main() {
         expect(result.head, isFalse);
       });
 
-      test('mapIndexed exposes the iteration index', () {
-        final result = NonEmptySet.of('a', const ['b']).mapIndexed(
+      test('mapIndexedToNonEmptyList exposes the iteration index', () {
+        final result =
+            NonEmptySet.of('a', const ['b']).mapIndexedToNonEmptyList(
           (index, letter) => '$index$letter',
         );
 
@@ -202,22 +203,6 @@ void main() {
         final result = NonEmptySet.of(1, const [2]).zip(NonEmptySet.of('a'));
 
         expect(result, [(1, 'a')]);
-      });
-    });
-
-    group('queries', () {
-      test('min and max compare elements', () {
-        final set = NonEmptySet.of(3, const [1, 2]);
-
-        expect(set.min(), 1);
-        expect(set.max(), 3);
-      });
-
-      test('minBy and maxBy compare selected keys', () {
-        final set = NonEmptySet.of('one', const ['three', 'go']);
-
-        expect(set.minBy((word) => word.length), 'go');
-        expect(set.maxBy((word) => word.length), 'three');
       });
     });
 

@@ -31,11 +31,11 @@ void _reportScores(List<int> rawScores) {
 }
 
 String _describeScores(NonEmptyList<int> scores) {
-  // `head`, `reduce`, and `min` cannot fail for a non-empty list.
+  // `head` and `reduce` cannot fail for a non-empty list.
   final total = scores.reduce((left, right) => left + right);
   final labels = scores.mapToNonEmptyList((score) => 'score: $score');
 
-  return '${labels.head}, lowest: ${scores.min()}, total: $total';
+  return '${labels.head}, total: $total';
 }
 
 String? _readName() {

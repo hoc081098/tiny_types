@@ -1,11 +1,12 @@
+import 'package:collection/collection.dart';
 import 'package:test/test.dart';
 import 'package:tiny_types/tiny_types.dart';
 
-String describe(NonEmptyCollection<int> collection) =>
+String describe(NonEmptyIterable<int> collection) =>
     '${collection.head} of ${collection.length}';
 
 void main() {
-  group('NonEmptyCollection', () {
+  group('NonEmptyIterable', () {
     test('abstracts over both implementations', () {
       expect(describe(NonEmptyList.of(1, const [2])), '1 of 2');
       expect(describe(NonEmptySet.of(1, const [2, 1])), '1 of 2');
@@ -26,8 +27,24 @@ void main() {
       expect(result, [1, 1, 2, 2]);
     });
 
+    test('package:collection mapIndexed remains lazy', () {
+      var callCount = 0;
+      final result = NonEmptyList.of('a', const ['b']).mapIndexed(
+        (index, letter) {
+          callCount++;
+          return '$index$letter';
+        },
+      );
+
+      expect(callCount, 0);
+      expect(result.first, '0a');
+      expect(callCount, 1);
+      expect(result, ['0a', '1b']);
+      expect(callCount, 3);
+    });
+
     test('flatten accepts mixed nesting', () {
-      final nested = NonEmptyList<NonEmptyCollection<int>>.of(
+      final nested = NonEmptyList<NonEmptyIterable<int>>.of(
         NonEmptyList.of(1, const [2]),
         [NonEmptySet.of(3)],
       );
@@ -43,7 +60,7 @@ void main() {
     });
 
     test('is a sealed hierarchy of exactly two kinds', () {
-      String kindOf(NonEmptyCollection<int> collection) => switch (collection) {
+      String kindOf(NonEmptyIterable<int> collection) => switch (collection) {
             NonEmptyList<int>() => 'list',
             NonEmptySet<int>() => 'set',
           };
