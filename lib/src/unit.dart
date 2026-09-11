@@ -53,6 +53,9 @@ final class Unit implements Comparable<Unit> {
   /// The only value of the [Unit] type.
   static const Unit value = Unit._();
 
+  // The UTF-8 bytes for `Unit`, used as a fixed non-zero type hash.
+  static const int _hashCode = 0x556e6974;
+
   /// A shared future that completes with [Unit.value].
   ///
   /// Use this when an already-completed `Future<Unit>` is needed. The future is
@@ -72,9 +75,9 @@ final class Unit implements Comparable<Unit> {
   @override
   bool operator ==(Object other) => other is Unit;
 
-  /// The hash code shared by all `Unit` values.
+  /// The non-zero hash code shared by all `Unit` values.
   @override
-  int get hashCode => 0;
+  int get hashCode => _hashCode;
 
   /// Returns zero because [Unit] has only one possible value.
   @override

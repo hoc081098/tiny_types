@@ -18,8 +18,9 @@ void main() {
     });
 
     test('hashCode', () async {
-      expect(Unit.value.hashCode, 0);
-      expect((await Unit.future).hashCode, 0);
+      expect(Unit.value.hashCode, isNot(0));
+      expect(Unit.value.hashCode, isNot(const None().hashCode));
+      expect((await Unit.future).hashCode, Unit.value.hashCode);
     });
 
     test('toString', () async {

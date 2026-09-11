@@ -248,6 +248,152 @@ void main() {
       });
     });
 
+    group('covariance safety', () {
+      const Option<num> widenedSome = Some<int>(1);
+      const Option<num> widenedNone = None();
+
+      test('state getters support widened variants', () {
+        expect(widenedSome.isSome, isTrue);
+        expect(widenedSome.isNone, isFalse);
+        expect(widenedNone.isSome, isFalse);
+        expect(widenedNone.isNone, isTrue);
+      });
+
+      test('onSome supports widened variants', () {
+        final observed = <num>[];
+
+        expect(widenedSome.onSome(observed.add), same(widenedSome));
+        expect(widenedNone.onSome(observed.add), same(widenedNone));
+        expect(observed, [1]);
+      });
+
+      test('onNone supports widened variants', () {
+        var callCount = 0;
+
+        expect(widenedSome.onNone(() => callCount++), same(widenedSome));
+        expect(widenedNone.onNone(() => callCount++), same(widenedNone));
+        expect(callCount, 1);
+      });
+
+      test('map supports widened variants', () {
+        expect(
+          widenedSome.map((value) => value.toDouble()),
+          const Some<double>(1),
+        );
+        expect(
+          widenedNone.map((value) => value.toDouble()),
+          const None(),
+        );
+      });
+
+      test('flatMap supports widened variants', () {
+        expect(
+          widenedSome.flatMap((value) => Some('value:$value')),
+          const Some<String>('value:1'),
+        );
+        expect(
+          widenedNone.flatMap((value) => Some('value:$value')),
+          const None(),
+        );
+      });
+
+      test('filter supports widened variants', () {
+        expect(widenedSome.filter((value) => value > 0), same(widenedSome));
+        expect(widenedNone.filter((value) => value > 0), same(widenedNone));
+      });
+
+      test('fold supports widened variants', () {
+        expect(
+          widenedSome.fold(
+            ifSome: (value) => 'some:$value',
+            ifNone: () => 'none',
+          ),
+          'some:1',
+        );
+        expect(
+          widenedNone.fold(
+            ifSome: (value) => 'some:$value',
+            ifNone: () => 'none',
+          ),
+          'none',
+        );
+      });
+
+      test('getOrNull supports widened variants', () {
+        expect(widenedSome.getOrNull(), 1);
+        expect(widenedNone.getOrNull(), isNull);
+      });
+
+      test('toList supports widened variants', () {
+        expect(widenedSome.toList(), <num>[1]);
+        expect(widenedNone.toList(), isEmpty);
+      });
+
+      test('getOrElse supports widened variants', () {
+        var callCount = 0;
+
+        num defaultValue() {
+          callCount++;
+          return 2.5;
+        }
+
+        expect(widenedSome.getOrElse(defaultValue), 1);
+        expect(callCount, 0);
+        expect(widenedNone.getOrElse(defaultValue), 2.5);
+        expect(callCount, 1);
+      });
+
+      test('orElse supports widened variants', () {
+        var callCount = 0;
+
+        Option<num> alternative() {
+          callCount++;
+          return const Some<double>(2.5);
+        }
+
+        expect(widenedSome.orElse(alternative), same(widenedSome));
+        expect(callCount, 0);
+        expect(widenedNone.orElse(alternative), const Some<double>(2.5));
+        expect(callCount, 1);
+      });
+
+      test('flatten supports widened variants', () {
+        const Option<Option<num>> widenedNestedSome =
+            Some<Option<int>>(Some<int>(1));
+        const Option<Option<num>> widenedNestedInnerNone =
+            Some<Option<int>>(None());
+        const Option<Option<num>> widenedNestedNone = None();
+
+        expect(widenedNestedSome.flatten(), const Some<int>(1));
+        expect(widenedNestedInnerNone.flatten(), const None());
+        expect(widenedNestedNone.flatten(), const None());
+      });
+
+      test('combine supports widened variants', () {
+        var callCount = 0;
+
+        num add(num left, num right) {
+          callCount++;
+          return left + right;
+        }
+
+        expect(
+          widenedSome.combine(const Some<double>(2.5), add),
+          const Some<double>(3.5),
+        );
+        expect(callCount, 1);
+        expect(
+          widenedSome.combine(widenedNone, add),
+          const None(),
+        );
+        expect(
+          widenedNone.combine(const Some<double>(2.5), add),
+          const None(),
+        );
+        expect(callCount, 1);
+      });
+    });
+
     group('pattern matching', () {
       test('supports an exhaustive switch over some and none', () {
         String describe(Option<int> option) => switch (option) {
@@ -266,17 +412,31 @@ void main() {
         const first = Some<int>(42);
         const second = Some<num>(42);
 
+        expect(identical(first, second), isFalse);
         expect(first, second);
+        expect(second, first);
+
         expect(first.hashCode, second.hashCode);
+
         expect(first, isNot(const Some(0)));
+        expect(first, isNot(const None()));
+        expect(const None(), isNot(first));
       });
 
-      test('none values are equal and have the same hashCode', () {
-        const first = Option<int>.none();
-        const second = Option<String>.none();
+      test('distinct none instances are equal and have the same hashCode', () {
+        // These calls intentionally omit `const` to create distinct instances.
+        // ignore: prefer_const_constructors
+        final first = Option<int>.none();
+        // Omit `const` here as well so this is not identical to `first`.
+        // ignore: prefer_const_constructors
+        final second = Option<String>.none();
 
+        expect(identical(first, second), isFalse);
         expect(first, second);
+        expect(second, first);
+
         expect(first.hashCode, second.hashCode);
+        expect(first.hashCode, isNot(Unit.value.hashCode));
       });
 
       test('toString identifies the option state', () {
