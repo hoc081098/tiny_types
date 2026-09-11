@@ -19,8 +19,9 @@ void main() {
     });
 
     test('flatMap accepts either implementation', () {
-      final result = NonEmptySet.of(1, const [2])
-          .flatMap((value) => NonEmptyList.of(value, [value]));
+      final result = NonEmptySet.of(1, const [2]).flatMap(
+        (value) => NonEmptyList.of(value, [value]),
+      );
 
       expect(result, [1, 1, 2, 2]);
     });

@@ -121,32 +121,70 @@ void main() {
     });
 
     group('transformations', () {
-      test('map returns a non-empty list of the results', () {
-        final result = NonEmptySet.of(1, const [2]).map((value) => value * 2);
+      test('map keeps the lazy Iterable contract', () {
+        var callCount = 0;
+        final result = NonEmptySet.of(1, const [2]).map((value) {
+          callCount++;
+          return value * 2;
+        });
 
+        expect(callCount, 0);
+        expect(result.first, 2);
+        expect(callCount, 1);
         expect(result, [2, 4]);
-        expect(result.head, 2);
+        expect(callCount, 3);
       });
 
-      test('map keeps duplicated results', () {
-        expect(
-          NonEmptySet.of(1, const [2]).map((value) => value.isEven),
-          [false, true],
+      test('mapToNonEmptyList keeps equal results', () {
+        final result = NonEmptySet.of(1, const [2, 3]).mapToNonEmptyList(
+          (value) => value.isEven,
         );
+
+        expect(result, [false, true, false]);
+        expect(result.head, isFalse);
+      });
+
+      test('mapToNonEmptySet collapses equal results', () {
+        final result = NonEmptySet.of(1, const [2, 3])
+            .mapToNonEmptySet((value) => value.isEven);
+
+        expect(result, {false, true});
+        expect(result.head, isFalse);
       });
 
       test('mapIndexed exposes the iteration index', () {
-        final result = NonEmptySet.of('a', const ['b'])
-            .mapIndexed((index, letter) => '$index$letter');
+        final result = NonEmptySet.of('a', const ['b']).mapIndexed(
+          (index, letter) => '$index$letter',
+        );
 
         expect(result, ['0a', '1b']);
+        expect(result.head, '0a');
+      });
+
+      test('mapIndexedToNonEmptySet collapses equal results', () {
+        final result = NonEmptySet.of('a', const ['b'])
+            .mapIndexedToNonEmptySet((index, letter) => letter.length);
+
+        expect(result, {1});
+        expect(result.head, 1);
       });
 
       test('flatMap concatenates the results', () {
-        final result = NonEmptySet.of(1, const [2])
-            .flatMap((value) => NonEmptySet.of(value, [-value]));
+        final result = NonEmptySet.of(1, const [2]).flatMap(
+          (value) => NonEmptySet.of(value, [-value]),
+        );
 
         expect(result, [1, -1, 2, -2]);
+        expect(result.head, 1);
+      });
+
+      test('flatMapToNonEmptySet collapses equal results', () {
+        final result = NonEmptySet.of(1, const [2]).flatMapToNonEmptySet(
+          (value) => NonEmptyList.of(value, [value]),
+        );
+
+        expect(result, {1, 2});
+        expect(result.head, 1);
       });
 
       test('distinct returns every element', () {
@@ -188,12 +226,12 @@ void main() {
         expect(NonEmptySet.of(2, const [1]).toNonEmptyList(), [2, 1]);
       });
 
-      test('toNonEmptySet copies the elements', () {
+      test('toNonEmptySet returns the same immutable set', () {
         final set = NonEmptySet.of(1);
-        final copy = set.toNonEmptySet();
+        final result = set.toNonEmptySet();
 
-        expect(copy, {1});
-        expect(identical(set, copy), isFalse);
+        expect(result, {1});
+        expect(identical(set, result), isTrue);
       });
 
       test('toNonEmptySetOrNull selects a set or null', () {

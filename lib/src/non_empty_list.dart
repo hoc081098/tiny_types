@@ -47,7 +47,8 @@ final class NonEmptyList<T> extends NonEmptyCollection<T> {
 
   /// The elements after [head], as an unmodifiable list.
   ///
-  /// The result is empty when this list has a single element.
+  /// Each access creates a snapshot in linear time. The result is empty when
+  /// this list has a single element.
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2, 3]).tail; // [2, 3]
@@ -137,6 +138,10 @@ final class NonEmptyList<T> extends NonEmptyCollection<T> {
   @override
   @useResult
   Set<T> toSet() => _elements.toSet();
+
+  @override
+  @useResult
+  NonEmptyList<T> toNonEmptyList() => this;
 
   /// Whether [other] is a `NonEmptyList` with equal elements in equal order.
   @override

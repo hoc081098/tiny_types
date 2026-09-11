@@ -18,14 +18,24 @@ part 'non_empty_set.dart';
 /// [NonEmptyList] and [NonEmptySet] are the two implementations. Neither is a
 /// [List] nor a [Set], deliberately: those interfaces declare mutating members
 /// that an immutable non-empty collection could only implement by throwing at
-/// run time. Only operations that preserve non-emptiness are declared here;
-/// reach for [NonEmptyList.asList] or [NonEmptySet.asSet] to hand the elements
-/// to an API that needs the plain type, and for [Iterable.toList] or
+/// run time. Reach for [NonEmptyList.asList] or [NonEmptySet.asSet] to hand the
+/// elements to an API that needs the plain type, and for [Iterable.toList] or
 /// [Iterable.toSet] to get a modifiable copy.
 ///
-/// Operations that have to preserve element order and duplicates return a
-/// [NonEmptyList], while [plus] and [plusAll] return the same kind of
-/// collection as their receiver.
+/// The strengthened operations follow Arrow's non-empty collection
+/// conventions, adapted to Dart's lazy [Iterable] contract:
+/// https://arrow-kt.io/learn/collections-functions/non-empty/
+///
+/// The separation from mutable [List] and [Set] interfaces follows the
+/// approach used by built_collection: https://pub.dev/packages/built_collection
+///
+/// Inherited transformations such as [map], [where], and [expand] keep the
+/// standard lazy [Iterable] semantics. Their return type no longer represents
+/// the non-empty guarantee, and filtering or expanding may actually produce no
+/// elements. Non-empty-preserving transformations such as [mapIndexed] and
+/// [flatMap] eagerly materialize a [NonEmptyList]. A `ToNonEmptySet` variant is
+/// available when equal results should be collapsed. [plus] and [plusAll]
+/// return the same kind of collection as their receiver.
 ///
 /// ```dart
 /// void notifyAll(NonEmptyCollection<String> recipients) {
@@ -99,24 +109,47 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
     ]);
   }
 
-  /// Transforms every element with [toElement].
+  /// Transforms every element into a new [NonEmptyList].
   ///
-  /// Unlike [Iterable.map], the result is computed eagerly, because the
-  /// returned collection has to be known to be non-empty.
+  /// The result is computed eagerly. Use [map] for a lazy [Iterable] instead.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2]).map((value) => value * 2); // [2, 4]
+  /// NonEmptyList.of(1, [2])
+  ///     .mapToNonEmptyList((value) => value * 2); // [2, 4]
   /// ```
-  @override
   @useResult
-  NonEmptyList<R> map<R>(R Function(T element) toElement) =>
+  NonEmptyList<R> mapToNonEmptyList<R>(
+    R Function(T element) toElement,
+  ) =>
       NonEmptyList._([for (final element in this) toElement(element)]);
 
-  /// Transforms every element with its iteration index.
+  /// Transforms every element into a new [NonEmptySet].
+  ///
+  /// The result is computed eagerly, and equal transformed elements are
+  /// collapsed. Use [map] for a lazy [Iterable] that preserves duplicates.
+  ///
+  /// ```dart
+  /// NonEmptyList.of(1, [2])
+  ///     .mapToNonEmptySet((value) => value.isEven); // {false, true}
+  /// ```
+  @useResult
+  NonEmptySet<R> mapToNonEmptySet<R>(
+    R Function(T element) toElement,
+  ) =>
+      NonEmptySet._(<R>{
+        for (final element in this) toElement(element),
+      });
+
+  /// Transforms every element with its iteration index into a
+  /// [NonEmptyList].
+  ///
+  /// The result is computed eagerly.
   ///
   /// ```dart
   /// NonEmptyList.of('a', ['b'])
-  ///     .mapIndexed((index, letter) => '$index$letter'); // ['0a', '1b']
+  ///     .mapIndexed(
+  ///       (index, letter) => '$index$letter',
+  ///     ); // ['0a', '1b']
   /// ```
   @useResult
   NonEmptyList<R> mapIndexed<R>(
@@ -126,13 +159,36 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
         for (final (index, element) in indexed) toElement(index, element),
       ]);
 
-  /// Concatenates the collections produced by [toElements].
+  /// Transforms every element with its iteration index into a [NonEmptySet].
   ///
-  /// Because each result is itself non-empty, the concatenation is non-empty.
+  /// The result is computed eagerly, and equal transformed elements are
+  /// collapsed.
+  ///
+  /// ```dart
+  /// NonEmptyList.of('a', ['b'])
+  ///     .mapIndexedToNonEmptySet(
+  ///       (index, letter) => '$index$letter',
+  ///     ); // {'0a', '1b'}
+  /// ```
+  @useResult
+  NonEmptySet<R> mapIndexedToNonEmptySet<R>(
+    R Function(int index, T element) toElement,
+  ) =>
+      NonEmptySet._(<R>{
+        for (final (index, element) in indexed) toElement(index, element),
+      });
+
+  /// Concatenates the collections produced by [toElements] into a
+  /// [NonEmptyList].
+  ///
+  /// The result is computed eagerly. Because each result is itself non-empty,
+  /// the concatenation is non-empty.
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2])
-  ///     .flatMap((value) => NonEmptyList.of(value, [-value]));
+  ///     .flatMap(
+  ///       (value) => NonEmptyList.of(value, [-value]),
+  ///     );
   /// // [1, -1, 2, -2]
   /// ```
   @useResult
@@ -142,6 +198,27 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
       NonEmptyList._([
         for (final element in this) ...toElements(element),
       ]);
+
+  /// Concatenates the collections produced by [toElements] into a
+  /// [NonEmptySet].
+  ///
+  /// The result is computed eagerly. Because each result is itself non-empty,
+  /// the result is non-empty; equal elements are collapsed.
+  ///
+  /// ```dart
+  /// NonEmptyList.of(1, [2])
+  ///     .flatMapToNonEmptySet(
+  ///       (value) => NonEmptyList.of(value, [-value]),
+  ///     );
+  /// // {1, -1, 2, -2}
+  /// ```
+  @useResult
+  NonEmptySet<R> flatMapToNonEmptySet<R>(
+    NonEmptyCollection<R> Function(T element) toElements,
+  ) =>
+      NonEmptySet._(<R>{
+        for (final element in this) ...toElements(element),
+      });
 
   /// Pairs each element with the element of [other] at the same position.
   ///
@@ -226,7 +303,8 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
 
   /// Returns these elements as a [NonEmptyList], preserving iteration order.
   ///
-  /// The result is always a copy.
+  /// Returns this object unchanged when it is already a [NonEmptyList].
+  /// Otherwise, eagerly materializes a new list in iteration order.
   ///
   /// ```dart
   /// NonEmptySet.of(1, [2]).toNonEmptyList(); // [1, 2]
@@ -236,7 +314,8 @@ sealed class NonEmptyCollection<T> extends Iterable<T> {
 
   /// Returns these elements as a [NonEmptySet], discarding duplicates.
   ///
-  /// The result is always a copy.
+  /// Returns this object unchanged when it is already a [NonEmptySet].
+  /// Otherwise, eagerly materializes a new set in first-occurrence order.
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2, 1]).toNonEmptySet(); // {1, 2}

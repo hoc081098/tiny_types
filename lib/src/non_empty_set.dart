@@ -9,9 +9,9 @@ part of 'non_empty_collection.dart';
 /// [Iterable.toSet] for a modifiable copy.
 ///
 /// Elements keep their insertion order and duplicates are discarded.
-/// Transformations that cannot preserve uniqueness, such as
-/// [NonEmptyCollection.map] and [NonEmptyCollection.flatMap], return a
-/// [NonEmptyList].
+/// Inherited [Iterable] transformations remain lazy. Non-empty-preserving
+/// transformations on [NonEmptyCollection] materialize a list by default; use
+/// a `ToNonEmptySet` variant when equal results should be collapsed.
 ///
 /// Create one with [NonEmptySet.of] when the first element is known
 /// statically, or with [IterableToNonEmptySetExtension] when starting from an
@@ -105,6 +105,10 @@ final class NonEmptySet<T> extends NonEmptyCollection<T> {
   @override
   @useResult
   Set<T> toSet() => _elements.toSet();
+
+  @override
+  @useResult
+  NonEmptySet<T> toNonEmptySet() => this;
 
   /// Whether [other] is a `NonEmptySet` containing exactly the same elements.
   ///

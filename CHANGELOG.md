@@ -8,3 +8,6 @@
   APIs that need the plain type.
 - Add `Iterable` conversions (`toNonEmptyListOrNull`, `toNonEmptyListOrNone`,
   `toNonEmptyListOrThrow`, and their `NonEmptySet` counterparts).
+- Keep inherited `Iterable` transformations lazy, and add eager transformations
+  that materialize a `NonEmptyList` or `NonEmptySet` while preserving the
+  non-empty guarantee.

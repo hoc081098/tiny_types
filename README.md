@@ -121,10 +121,9 @@ final NonEmptyList<User> users = ...;
 users.add(newUser); // Does not compile at all.
 ```
 
-Only operations that preserve non-emptiness are declared on the types
-themselves. Anything that can produce an empty result goes through a view:
 `asList()` and `asSet()` return an unmodifiable view in constant time, while
-`toList()` and `toSet()` return a modifiable copy.
+`toList()` and `toSet()` return a modifiable copy. Operations that can produce
+an empty result return their normal Dart collection type.
 
 ```dart
 render(users.asList()); // For an API that needs a `List<User>`.
@@ -149,15 +148,39 @@ scores.min(); // 3
 scores.maxBy((score) => -score); // 3
 ```
 
-Transformations that cannot remove elements preserve non-emptiness.
+Inherited `Iterable` transformations keep Dart's standard lazy behavior and
+return an `Iterable`. This includes `map`, `where`, and `expand`.
+
+```dart
+final Iterable<String> lazyLabels =
+    scores.map((score) => 'score: $score');
+
+final Iterable<int> positive = scores.where((score) => score > 0);
+// `positive` can be empty.
+```
+
+Use an eager non-empty-preserving transformation when the result should be
+materialized immediately. List-producing operations preserve order and
+duplicates; explicitly choose a set-producing variant to collapse equal
+results.
 
 ```dart
 final NonEmptyList<String> labels =
-    scores.map((score) => 'score: $score');
+    scores.mapToNonEmptyList((score) => 'score: $score');
+
+final NonEmptySet<bool> parity =
+    scores.mapToNonEmptySet((score) => score.isEven);
 
 final NonEmptyList<int> doubled =
-    scores.flatMap((score) => NonEmptyList.of(score, [score]));
+    scores.flatMap(
+      (score) => NonEmptyList.of(score, [score]),
+    );
 ```
+
+The available materializing transformations are `mapToNonEmptyList`,
+`mapToNonEmptySet`, `mapIndexed`, `mapIndexedToNonEmptySet`, `flatMap`, and
+`flatMapToNonEmptySet`. The `flatMap` variants require each callback result to
+be a `NonEmptyCollection`, so the combined result cannot be empty.
 
 ### Converting from an existing collection
 
@@ -189,8 +212,9 @@ total(NonEmptyList.of(1, [2, 2])); // 5
 total(NonEmptySet.of(1, [2, 2])); // 3
 ```
 
-Operations that cannot preserve uniqueness or order, such as `map` and
-`flatMap`, always return a `NonEmptyList<T>`.
+`mapToNonEmptyList`, `mapIndexed`, and `flatMap` preserve iteration order and
+duplicates. Their `ToNonEmptySet` counterparts preserve first-occurrence order
+and collapse equal values.
 
 ## Design goals
 
