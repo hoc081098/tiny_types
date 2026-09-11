@@ -7,6 +7,8 @@ part of 'non_empty_iterable.dart';
 /// implement by throwing at run time. Use [asSet] to hand the elements to an
 /// API that needs a [Set] or to compute an intersection or a difference, and
 /// [Iterable.toSet] for a modifiable copy.
+/// Common [Iterable] operations delegate directly to the backing set so they
+/// retain its specialized implementations; lazy operations remain lazy.
 ///
 /// Elements keep their insertion order and duplicates are discarded.
 /// Inherited [Iterable] transformations remain lazy. Non-empty-preserving
@@ -41,9 +43,44 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   // what makes the unmodifiable view returned by `asSet` safe to share.
   final Set<T> _elements;
 
+  // NonEmptyIterable.
+
   @override
   @useResult
   T get head => _elements.first;
+
+  @override
+  @useResult
+  NonEmptySet<T> plus(T element) => NonEmptySet._(<T>{..._elements, element});
+
+  @override
+  @useResult
+  NonEmptySet<T> plusAll(Iterable<T> elements) =>
+      NonEmptySet._(<T>{..._elements, ...elements});
+
+  @override
+  @useResult
+  NonEmptySet<T> distinct() => this;
+
+  @override
+  @useResult
+  NonEmptySet<T> distinctBy<K>(K Function(T element) selector) {
+    final seenKeys = <K>{};
+    return NonEmptySet._(<T>{
+      for (final element in _elements)
+        if (seenKeys.add(selector(element))) element,
+    });
+  }
+
+  @override
+  @useResult
+  NonEmptyList<T> toNonEmptyList() => NonEmptyList._(_elements.toList());
+
+  @override
+  @useResult
+  NonEmptySet<T> toNonEmptySet() => this;
+
+  // Set-like.
 
   /// Returns these elements as an unmodifiable [Set].
   ///
@@ -60,6 +97,10 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   @useResult
   Set<T> asSet() => UnmodifiableSetView<T>(_elements);
 
+  /// Whether this set contains every element of [other].
+  @useResult
+  bool containsAll(Iterable<Object?> other) => _elements.containsAll(other);
+
   /// The element equal to [element], or `null` when there is none.
   ///
   /// ```dart
@@ -71,31 +112,62 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  NonEmptySet<T> plus(T element) => NonEmptySet._(<T>{..._elements, element});
+  int get length => _elements.length;
 
-  @override
-  @useResult
-  NonEmptySet<T> plusAll(Iterable<T> elements) =>
-      NonEmptySet._(<T>{..._elements, ...elements});
+  // Iterable.
+  // Delegate to the backing set for its specialized implementations.
 
   @override
   Iterator<T> get iterator => _elements.iterator;
 
   @override
   @useResult
-  int get length => _elements.length;
+  Iterable<R> map<R>(R Function(T element) toElement) =>
+      _elements.map(toElement);
 
   @override
   @useResult
-  T get first => _elements.first;
+  Iterable<T> where(bool Function(T element) test) => _elements.where(test);
 
   @override
   @useResult
-  T get last => _elements.last;
+  Iterable<R> whereType<R>() => _elements.whereType<R>();
+
+  @override
+  @useResult
+  Iterable<R> expand<R>(Iterable<R> Function(T element) toElements) =>
+      _elements.expand(toElements);
 
   @override
   @useResult
   bool contains(Object? element) => _elements.contains(element);
+
+  @override
+  void forEach(void Function(T element) action) => _elements.forEach(action);
+
+  @override
+  @useResult
+  T reduce(T Function(T value, T element) combine) => _elements.reduce(combine);
+
+  @override
+  R fold<R>(R initialValue, R Function(R value, T element) combine) =>
+      _elements.fold(initialValue, combine);
+
+  @override
+  @useResult
+  Iterable<T> followedBy(Iterable<T> other) => _elements.followedBy(other);
+
+  @override
+  @useResult
+  bool every(bool Function(T element) test) => _elements.every(test);
+
+  @override
+  @useResult
+  String join([String separator = '']) => _elements.join(separator);
+
+  @override
+  @useResult
+  bool any(bool Function(T element) test) => _elements.any(test);
 
   @override
   @useResult
@@ -108,11 +180,58 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  NonEmptyList<T> toNonEmptyList() => NonEmptyList._(_elements.toList());
+  Iterable<T> take(int count) => _elements.take(count);
 
   @override
   @useResult
-  NonEmptySet<T> toNonEmptySet() => this;
+  Iterable<T> takeWhile(bool Function(T element) test) =>
+      _elements.takeWhile(test);
+
+  @override
+  @useResult
+  Iterable<T> skip(int count) => _elements.skip(count);
+
+  @override
+  @useResult
+  Iterable<T> skipWhile(bool Function(T element) test) =>
+      _elements.skipWhile(test);
+
+  @override
+  @useResult
+  T get first => _elements.first;
+
+  @override
+  @useResult
+  T get last => _elements.last;
+
+  @override
+  @useResult
+  T get single => _elements.single;
+
+  @override
+  @useResult
+  T firstWhere(bool Function(T element) test, {T Function()? orElse}) =>
+      _elements.firstWhere(test, orElse: orElse);
+
+  @override
+  @useResult
+  T lastWhere(bool Function(T element) test, {T Function()? orElse}) =>
+      _elements.lastWhere(test, orElse: orElse);
+
+  @override
+  @useResult
+  T singleWhere(bool Function(T element) test, {T Function()? orElse}) =>
+      _elements.singleWhere(test, orElse: orElse);
+
+  @override
+  @useResult
+  T elementAt(int index) => _elements.elementAt(index);
+
+  @override
+  @useResult
+  Iterable<R> cast<R>() => Iterable.castFrom<T, R>(_elements);
+
+  // Object.
 
   /// Whether [other] is a `NonEmptySet` containing exactly the same elements.
   ///

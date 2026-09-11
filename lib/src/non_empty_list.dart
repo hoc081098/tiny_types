@@ -8,6 +8,8 @@ part of 'non_empty_iterable.dart';
 /// implement by throwing at run time. Use [asList] to hand the elements to an
 /// API that needs a [List], [operator []] to read one by index, and
 /// [Iterable.toList] for a modifiable copy.
+/// Common [Iterable] operations delegate directly to the backing list so they
+/// retain its specialized implementations; lazy operations remain lazy.
 ///
 /// Create one with [NonEmptyList.of] when the first element is known
 /// statically, or with [IterableToNonEmptyListExtension] when starting from an
@@ -41,6 +43,8 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   // what makes the unmodifiable view returned by `asList` safe to share.
   final List<T> _elements;
 
+  // NonEmptyIterable.
+
   @override
   @useResult
   T get head => _elements[0];
@@ -56,25 +60,38 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   List<T> get tail => List<T>.unmodifiable(_elements.skip(1));
 
-  /// The elements of this list in reverse order.
-  ///
-  /// ```dart
-  /// NonEmptyList.of(1, [2]).reversed; // [2, 1]
-  /// ```
+  @override
   @useResult
-  NonEmptyList<T> get reversed =>
-      NonEmptyList._(_elements.reversed.toList(growable: false));
+  NonEmptyList<T> plus(T element) => NonEmptyList._([..._elements, element]);
 
-  /// The element at [index].
-  ///
-  /// Reading index `0` never throws. Throws a [RangeError] for any other index
-  /// outside `0` until [length] minus one.
-  ///
-  /// ```dart
-  /// NonEmptyList.of(1, [2])[1]; // 2
-  /// ```
+  @override
   @useResult
-  T operator [](int index) => _elements[index];
+  NonEmptyList<T> plusAll(Iterable<T> elements) =>
+      NonEmptyList._([..._elements, ...elements]);
+
+  @override
+  @useResult
+  NonEmptyList<T> distinct() => distinctBy<T>((element) => element);
+
+  @override
+  @useResult
+  NonEmptyList<T> distinctBy<K>(K Function(T element) selector) {
+    final seenKeys = <K>{};
+    return NonEmptyList._([
+      for (final element in _elements)
+        if (seenKeys.add(selector(element))) element,
+    ]);
+  }
+
+  @override
+  @useResult
+  NonEmptyList<T> toNonEmptyList() => this;
+
+  @override
+  @useResult
+  NonEmptySet<T> toNonEmptySet() => NonEmptySet._(_elements.toSet());
+
+  // List-like.
 
   /// Returns these elements as an unmodifiable [List].
   ///
@@ -90,14 +107,16 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   List<T> asList() => UnmodifiableListView<T>(_elements);
 
-  @override
+  /// The element at [index].
+  ///
+  /// Reading index `0` never throws. Throws a [RangeError] for any other index
+  /// outside `0` until [length] minus one.
+  ///
+  /// ```dart
+  /// NonEmptyList.of(1, [2])[1]; // 2
+  /// ```
   @useResult
-  NonEmptyList<T> plus(T element) => NonEmptyList._([..._elements, element]);
-
-  @override
-  @useResult
-  NonEmptyList<T> plusAll(Iterable<T> elements) =>
-      NonEmptyList._([..._elements, ...elements]);
+  T operator [](int index) => _elements[index];
 
   /// Returns a new list with the elements of [other] appended.
   ///
@@ -107,28 +126,73 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   NonEmptyList<T> operator +(Iterable<T> other) => plusAll(other);
 
-  @override
-  Iterator<T> get iterator => _elements.iterator;
+  /// The elements of this list in reverse order.
+  ///
+  /// ```dart
+  /// NonEmptyList.of(1, [2]).reversed; // [2, 1]
+  /// ```
+  @useResult
+  NonEmptyList<T> get reversed =>
+      NonEmptyList._(_elements.reversed.toList(growable: false));
 
   @override
   @useResult
   int get length => _elements.length;
 
+  // Iterable.
+  // Delegate to the backing list for its specialized implementations.
+
   @override
-  @useResult
-  T get first => _elements[0];
+  Iterator<T> get iterator => _elements.iterator;
 
   @override
   @useResult
-  T get last => _elements[_elements.length - 1];
+  Iterable<R> map<R>(R Function(T element) toElement) =>
+      _elements.map(toElement);
 
   @override
   @useResult
-  T elementAt(int index) => _elements[index];
+  Iterable<T> where(bool Function(T element) test) => _elements.where(test);
+
+  @override
+  @useResult
+  Iterable<R> whereType<R>() => _elements.whereType<R>();
+
+  @override
+  @useResult
+  Iterable<R> expand<R>(Iterable<R> Function(T element) toElements) =>
+      _elements.expand(toElements);
 
   @override
   @useResult
   bool contains(Object? element) => _elements.contains(element);
+
+  @override
+  void forEach(void Function(T element) action) => _elements.forEach(action);
+
+  @override
+  @useResult
+  T reduce(T Function(T value, T element) combine) => _elements.reduce(combine);
+
+  @override
+  R fold<R>(R initialValue, R Function(R value, T element) combine) =>
+      _elements.fold(initialValue, combine);
+
+  @override
+  @useResult
+  Iterable<T> followedBy(Iterable<T> other) => _elements.followedBy(other);
+
+  @override
+  @useResult
+  bool every(bool Function(T element) test) => _elements.every(test);
+
+  @override
+  @useResult
+  String join([String separator = '']) => _elements.join(separator);
+
+  @override
+  @useResult
+  bool any(bool Function(T element) test) => _elements.any(test);
 
   @override
   @useResult
@@ -141,11 +205,58 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  NonEmptyList<T> toNonEmptyList() => this;
+  Iterable<T> take(int count) => _elements.take(count);
 
   @override
   @useResult
-  NonEmptySet<T> toNonEmptySet() => NonEmptySet._(_elements.toSet());
+  Iterable<T> takeWhile(bool Function(T element) test) =>
+      _elements.takeWhile(test);
+
+  @override
+  @useResult
+  Iterable<T> skip(int count) => _elements.skip(count);
+
+  @override
+  @useResult
+  Iterable<T> skipWhile(bool Function(T element) test) =>
+      _elements.skipWhile(test);
+
+  @override
+  @useResult
+  T get first => _elements[0];
+
+  @override
+  @useResult
+  T get last => _elements[_elements.length - 1];
+
+  @override
+  @useResult
+  T get single => _elements.single;
+
+  @override
+  @useResult
+  T firstWhere(bool Function(T element) test, {T Function()? orElse}) =>
+      _elements.firstWhere(test, orElse: orElse);
+
+  @override
+  @useResult
+  T lastWhere(bool Function(T element) test, {T Function()? orElse}) =>
+      _elements.lastWhere(test, orElse: orElse);
+
+  @override
+  @useResult
+  T singleWhere(bool Function(T element) test, {T Function()? orElse}) =>
+      _elements.singleWhere(test, orElse: orElse);
+
+  @override
+  @useResult
+  T elementAt(int index) => _elements[index];
+
+  @override
+  @useResult
+  Iterable<R> cast<R>() => Iterable.castFrom<T, R>(_elements);
+
+  // Object.
 
   /// Whether [other] is a `NonEmptyList` with equal elements in equal order.
   @override

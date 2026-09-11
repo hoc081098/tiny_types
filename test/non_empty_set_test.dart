@@ -53,6 +53,8 @@ void main() {
         expect(NonEmptySet.of(1).contains(1), isTrue);
         const Object otherType = '1';
         expect(NonEmptySet.of(1).contains(otherType), isFalse);
+        expect(NonEmptySet.of(1, const [2]).containsAll([1, 2]), isTrue);
+        expect(NonEmptySet.of(1).containsAll([1, 2]), isFalse);
         expect(NonEmptySet.of(1).lookup(1), 1);
         expect(NonEmptySet.of(1).lookup(2), isNull);
       });
@@ -188,15 +190,21 @@ void main() {
         expect(result.head, 1);
       });
 
-      test('distinct returns every element', () {
-        expect(NonEmptySet.of(1, const [2]).distinct(), [1, 2]);
+      test('distinct returns the same immutable set', () {
+        final set = NonEmptySet.of(1, const [2]);
+        final result = set.distinct();
+
+        expect(result, {1, 2});
+        expect(result, isA<NonEmptySet<int>>());
+        expect(identical(result, set), isTrue);
       });
 
       test('distinctBy keeps the first occurrence of each key', () {
         final result = NonEmptySet.of('one', const ['three', 'two'])
             .distinctBy((word) => word.length);
 
-        expect(result, ['one', 'three']);
+        expect(result, {'one', 'three'});
+        expect(result, isA<NonEmptySet<String>>());
       });
 
       test('zip pairs elements by position', () {

@@ -43,6 +43,46 @@ void main() {
       expect(callCount, 3);
     });
 
+    test('delegates standard Iterable operations', () {
+      final values = <NonEmptyIterable<int>>[
+        NonEmptyList.of(1, const [2]),
+        NonEmptySet.of(1, const [2]),
+      ];
+
+      for (final value in values) {
+        expect(value.where((element) => element.isEven), [2]);
+        expect(value.whereType<num>(), [1, 2]);
+        expect(value.expand((element) => [element, -element]), [1, -1, 2, -2]);
+
+        final visited = <int>[];
+        value.forEach(visited.add);
+        expect(visited, [1, 2]);
+
+        expect(value.reduce((sum, element) => sum + element), 3);
+        expect(value.fold(10, (sum, element) => sum + element), 13);
+        expect(value.followedBy([3]), [1, 2, 3]);
+        expect(value.every((element) => element > 0), isTrue);
+        expect(value.any((element) => element.isEven), isTrue);
+        expect(value.join(','), '1,2');
+        expect(value.take(1), [1]);
+        expect(value.takeWhile((element) => element < 2), [1]);
+        expect(value.skip(1), [2]);
+        expect(value.skipWhile((element) => element < 2), [2]);
+        expect(value.firstWhere((element) => element.isEven), 2);
+        expect(value.lastWhere((element) => element > 0), 2);
+        expect(value.singleWhere((element) => element.isEven), 2);
+        expect(value.elementAt(1), 2);
+
+        final cast = value.cast<num>();
+        expect(cast, [1, 2]);
+        expect(cast, isNot(isA<List<num>>()));
+        expect(cast, isNot(isA<Set<num>>()));
+      }
+
+      expect(NonEmptyList.of(1).single, 1);
+      expect(NonEmptySet.of(1).single, 1);
+    });
+
     test('flatten accepts mixed nesting', () {
       final nested = NonEmptyList<NonEmptyIterable<int>>.of(
         NonEmptyList.of(1, const [2]),

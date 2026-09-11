@@ -203,7 +203,10 @@ void main() {
       });
 
       test('distinct keeps the first occurrence of each element', () {
-        expect(NonEmptyList.of(1, const [2, 1, 3]).distinct(), [1, 2, 3]);
+        final result = NonEmptyList.of(1, const [2, 1, 3]).distinct();
+
+        expect(result, [1, 2, 3]);
+        expect(result, isA<NonEmptyList<int>>());
       });
 
       test('distinctBy keeps the first occurrence of each key', () {
@@ -211,6 +214,7 @@ void main() {
             .distinctBy((word) => word.length);
 
         expect(result, ['one', 'three']);
+        expect(result, isA<NonEmptyList<String>>());
       });
 
       test('flatten removes one level of nesting', () {

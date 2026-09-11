@@ -11,3 +11,5 @@
 - Keep inherited `Iterable` transformations lazy, and add eager transformations
   that materialize a `NonEmptyList` or `NonEmptySet` while preserving the
   non-empty guarantee.
+- Delegate common `Iterable` operations to the backing list or set, and expose
+  the read-only `NonEmptySet.containsAll` query directly.

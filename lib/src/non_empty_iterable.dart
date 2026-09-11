@@ -83,32 +83,28 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   @useResult
   NonEmptyIterable<T> plusAll(Iterable<T> elements);
 
-  /// Returns the elements of this collection without duplicates.
+  /// Returns the elements of this iterable without duplicates.
   ///
-  /// The first occurrence of each element is kept, in iteration order.
+  /// The result has the same concrete kind as this iterable. The first
+  /// occurrence of each element is kept, in iteration order.
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2, 1]).distinct(); // [1, 2]
   /// ```
   @useResult
-  NonEmptyList<T> distinct() => distinctBy<T>((element) => element);
+  NonEmptyIterable<T> distinct();
 
   /// Returns the elements whose [selector] value is seen for the first time.
   ///
-  /// [selector] is called exactly once per element, in iteration order.
+  /// The result has the same concrete kind as this iterable. [selector] is
+  /// called exactly once per element, in iteration order.
   ///
   /// ```dart
   /// NonEmptyList.of('one', ['three', 'two'])
   ///     .distinctBy((word) => word.length); // ['one', 'three']
   /// ```
   @useResult
-  NonEmptyList<T> distinctBy<K>(K Function(T element) selector) {
-    final seenKeys = <K>{};
-    return NonEmptyList._([
-      for (final element in this)
-        if (seenKeys.add(selector(element))) element,
-    ]);
-  }
+  NonEmptyIterable<T> distinctBy<K>(K Function(T element) selector);
 
   /// Transforms every element into a new [NonEmptyList].
   ///

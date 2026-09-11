@@ -128,10 +128,12 @@ an empty result return their normal Dart collection type.
 ```dart
 render(users.asList()); // For an API that needs a `List<User>`.
 users.asList().sublist(1); // Possibly empty, so it is a plain `List`.
+tags.containsAll(['dart']); // Read-only set queries stay directly available.
 tags.asSet().difference(banned); // Possibly empty, so it is a plain `Set`.
 ```
 
-New collections are derived with `plus`, `plusAll`, or `operator +`.
+`plus`, `plusAll`, `distinct`, and `distinctBy` preserve the concrete non-empty
+kind. `operator +` provides the corresponding shorthand for `NonEmptyList`.
 
 `NonEmptyIterable<T>` is a sealed type, so `NonEmptyList` and `NonEmptySet`
 are its only implementations and a switch over them is exhaustive.
