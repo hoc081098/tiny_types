@@ -2,10 +2,11 @@
 
 - Initial version.
 - Add the sealed `NonEmptyIterable<T>` and its two implementations,
-  `NonEmptyList<T>` and `NonEmptySet<T>`. Both are `Iterable<T>` and neither
-  implements `List<T>` or `Set<T>`, so mutating members of those interfaces
-  are not exposed directly. `asList()` and `asSet()` return unmodifiable views
-  for APIs that need the plain types.
+  `NonEmptyList<T>` and `NonEmptySet<T>`. Both implement `Iterable<T>` and
+  provide read-only list-like or set-like operations without implementing
+  `List<T>` or `Set<T>`. Updates return new collections; `asList()` and
+  `asSet()` provide unmodifiable views, while `toList()` and `toSet()` create
+  modifiable copies.
 - Add `Iterable` conversions (`toNonEmptyListOrNull`, `toNonEmptyListOrNone`,
   `toNonEmptyListOrThrow`, and their `NonEmptySet` counterparts).
 - Keep inherited `Iterable` transformations lazy, and add eager transformations

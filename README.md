@@ -110,10 +110,10 @@ every call site.
 
 ### Not a `List`, not a `Set`
 
-Both types are `Iterable<T>`, and neither implements `List<T>` or `Set<T>` on
-purpose. In Dart those interfaces declare mutating members, so an immutable
-collection can only implement them by throwing at run time, which would put
-the invariant back to something a call site can only discover by crashing.
+Both types implement `Iterable<T>` and provide read-only list-like and
+set-like operations, respectively. Neither implements `List<T>` or `Set<T>`;
+operations such as `plus` and `plusAll` return new collections instead of
+changing the originals.
 
 ```dart
 final NonEmptyList<User> users = ...;
@@ -121,9 +121,10 @@ final NonEmptyList<User> users = ...;
 users.add(newUser); // Does not compile at all.
 ```
 
-`asList()` and `asSet()` return an unmodifiable view in constant time, while
-`toList()` and `toSet()` return a modifiable copy. Operations that can produce
-an empty result return their normal Dart collection type.
+`asList()` and `asSet()` provide unmodifiable views in constant time when an
+API requires a `List` or `Set`. `toList()` and `toSet()` create modifiable
+copies. Operations that can produce an empty result return their normal Dart
+collection type.
 
 ```dart
 render(users.asList()); // For an API that needs a `List<User>`.

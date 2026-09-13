@@ -15,12 +15,14 @@ part 'non_empty_set.dart';
 /// total ones: [Iterable.first], [Iterable.last], and [Iterable.reduce] can
 /// never throw for a non-empty collection.
 ///
-/// [NonEmptyList] and [NonEmptySet] are the two implementations. Neither is a
-/// [List] nor a [Set], deliberately: those interfaces declare mutating members
-/// that an immutable non-empty collection could only implement by throwing at
-/// run time. Reach for [NonEmptyList.asList] or [NonEmptySet.asSet] to hand the
-/// elements to an API that needs the plain type, and for [Iterable.toList] or
-/// [Iterable.toSet] to get a modifiable copy.
+/// [NonEmptyList] and [NonEmptySet] implement [Iterable] and provide read-only
+/// list-like and set-like operations, respectively. Neither implements [List]
+/// or [Set]; operations such as [plus] and [plusAll] return new collections
+/// instead of changing the originals.
+///
+/// [NonEmptyList.asList] and [NonEmptySet.asSet] provide unmodifiable views
+/// when an API requires a [List] or [Set]. [Iterable.toList] and
+/// [Iterable.toSet] create modifiable copies.
 ///
 /// The strengthened operations follow Arrow's non-empty collection
 /// conventions, adapted to Dart's lazy [Iterable] contract:
