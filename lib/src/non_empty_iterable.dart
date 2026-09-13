@@ -9,11 +9,26 @@ part 'non_empty_set.dart';
 
 /// An [Iterable] that always contains at least one element.
 ///
+/// ## Non-empty guarantee
+///
 /// `NonEmptyIterable<T>` moves the "at least one element" requirement into
 /// the type system, so an API can demand it once instead of validating it at
 /// every call site. It also turns the partial operations of [Iterable] into
 /// total ones: [Iterable.first], [Iterable.last], and [Iterable.reduce] can
 /// never throw for a non-empty collection.
+///
+/// ```dart
+/// void notifyAll(NonEmptyIterable<String> recipients) {
+///   // `head` and `reduce` cannot fail here.
+///   print('Notifying ${recipients.head} and ${recipients.length - 1} more');
+/// }
+/// ```
+///
+/// The strengthened operations follow Arrow's non-empty collection
+/// conventions, adapted to Dart's lazy [Iterable] contract:
+/// https://arrow-kt.io/learn/collections-functions/non-empty/
+///
+/// ## Read-only collection interfaces
 ///
 /// [NonEmptyList] and [NonEmptySet] implement [Iterable] and provide read-only
 /// list-like and set-like operations, respectively. Neither implements [List]
@@ -24,12 +39,10 @@ part 'non_empty_set.dart';
 /// when an API requires a [List] or [Set]. [Iterable.toList] and
 /// [Iterable.toSet] create modifiable copies.
 ///
-/// The strengthened operations follow Arrow's non-empty collection
-/// conventions, adapted to Dart's lazy [Iterable] contract:
-/// https://arrow-kt.io/learn/collections-functions/non-empty/
-///
 /// The separation from mutable [List] and [Set] interfaces follows the
 /// approach used by built_collection: https://pub.dev/packages/built_collection
+///
+/// ## Transformations
 ///
 /// Inherited transformations such as [map], [where], and [expand] keep the
 /// standard lazy [Iterable] semantics. Their return type no longer represents
@@ -39,13 +52,6 @@ part 'non_empty_set.dart';
 /// [NonEmptyList]. A `ToNonEmptySet` variant is available when equal results
 /// should be collapsed. [plus] and [plusAll] return the same kind of collection
 /// as their receiver.
-///
-/// ```dart
-/// void notifyAll(NonEmptyIterable<String> recipients) {
-///   // `head` and `reduce` cannot fail here.
-///   print('Notifying ${recipients.head} and ${recipients.length - 1} more');
-/// }
-/// ```
 sealed class NonEmptyIterable<T> extends Iterable<T> {
   const NonEmptyIterable._();
 
