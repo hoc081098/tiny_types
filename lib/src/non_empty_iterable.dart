@@ -14,13 +14,12 @@ part 'non_empty_set.dart';
 ///
 /// `NonEmptyIterable<T>` moves the "at least one element" requirement into
 /// the type system, so an API can demand it once instead of validating it at
-/// every call site. It also turns the partial operations of [Iterable] into
-/// total ones: [Iterable.first], [Iterable.last], and [Iterable.reduce] can
-/// never throw for a non-empty collection.
+/// every call site. As a result, [Iterable.first], [Iterable.last], and
+/// [Iterable.reduce] cannot fail due to an empty receiver.
 ///
 /// ```dart
 /// void notifyAll(NonEmptyIterable<String> recipients) {
-///   // `head` and `reduce` cannot fail here.
+///   // `head` is always available.
 ///   print('Notifying ${recipients.head} and ${recipients.length - 1} more');
 /// }
 /// ```
@@ -59,6 +58,8 @@ part 'non_empty_set.dart';
 sealed class NonEmptyIterable<T> extends Iterable<T> {
   const NonEmptyIterable._();
 
+  //region Non-empty guarantee
+
   /// The first element of this collection.
   ///
   /// Unlike [Iterable.first], this never throws.
@@ -86,18 +87,33 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   @useResult
   bool get isNotEmpty => true;
 
-  /// Returns a new collection with [element] appended to this one.
+  //endregion
+
+  // --------------------------------------------------------------------------
+
+  //region Operations that return the same kind of collection
+
+  /// Returns a new collection with [element] added.
+  ///
+  /// A [NonEmptySet] keeps only one occurrence of an equal element.
   ///
   /// ```dart
   /// NonEmptyList.of(1).plus(2); // [1, 2]
+  ///
+  /// NonEmptySet.of(1).plus(2); // {1, 2}
+  /// NonEmptySet.of(1).plus(1); // {1}
   /// ```
   @useResult
   NonEmptyIterable<T> plus(T element);
 
-  /// Returns a new collection with every value of [elements] appended.
+  /// Returns a new collection with all [elements] added.
+  ///
+  /// A [NonEmptySet] keeps only the first occurrence of each element.
   ///
   /// ```dart
   /// NonEmptyList.of(1).plusAll([2, 3]); // [1, 2, 3]
+  ///
+  /// NonEmptySet.of(1).plusAll([1, 2, 3]); // {1, 2, 3}
   /// ```
   @useResult
   NonEmptyIterable<T> plusAll(Iterable<T> elements);
@@ -109,6 +125,10 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2, 1]).distinct(); // [1, 2]
+  ///
+  /// final nes = NonEmptySet.of(1, [2, 3]);
+  /// nes.distinct(); // {1, 2, 3}
+  /// identical(nes, nes.distinct()); // true
   /// ```
   @useResult
   NonEmptyIterable<T> distinct();
@@ -121,9 +141,46 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// ```dart
   /// NonEmptyList.of('one', ['three', 'two'])
   ///     .distinctBy((word) => word.length); // ['one', 'three']
+  ///
+  /// final nes = NonEmptySet.of(-1, [-2, -3, 1, 2, 3]);
+  /// // {-1, -2, -3, 1, 2, 3}
+  /// nes.distinctBy((n) => n.abs()); // {-1, -2, -3}
   /// ```
   @useResult
   NonEmptyIterable<T> distinctBy<K>(K Function(T element) selector);
+
+  //endregion
+
+  // --------------------------------------------------------------------------
+
+  //region Conversion between concrete NonEmptyIterable types.
+  /// Returns these elements as a [NonEmptyList], preserving iteration order.
+  ///
+  /// Returns this object unchanged when it is already a [NonEmptyList].
+  /// Otherwise, eagerly materializes a new list in iteration order.
+  ///
+  /// ```dart
+  /// NonEmptySet.of(1, [2]).toNonEmptyList(); // [1, 2]
+  /// ```
+  @useResult
+  NonEmptyList<T> toNonEmptyList();
+
+  /// Returns these elements as a [NonEmptySet], discarding duplicates.
+  ///
+  /// Returns this object unchanged when it is already a [NonEmptySet].
+  /// Otherwise, eagerly materializes a new set in first-occurrence order.
+  ///
+  /// ```dart
+  /// NonEmptyList.of(1, [2, 1]).toNonEmptySet(); // {1, 2}
+  /// ```
+  @useResult
+  NonEmptySet<T> toNonEmptySet();
+
+  //endregion
+
+  // --------------------------------------------------------------------------
+
+  //region Non-empty-preserving transformations
 
   /// Transforms every element into a new [NonEmptyList].
   ///
@@ -160,7 +217,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// [NonEmptyList].
   ///
   /// The result is computed eagerly. This name is deliberately distinct from
-  /// package:collection's lazy `mapIndexed` extension.
+  /// `package:collection`'s lazy `mapIndexed` extension.
   ///
   /// ```dart
   /// NonEmptyList.of('a', ['b'])
@@ -242,7 +299,8 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// The result is as long as the shorter of the two collections.
   ///
   /// ```dart
-  /// final pairs = NonEmptyList.of(1, [2]).zip(NonEmptyList.of('a', ['b']));
+  /// final pairs = NonEmptyList.of(1, [2])
+  ///     .zip(NonEmptyList.of('a', ['b', 'c']));
   /// // [(1, 'a'), (2, 'b')]
   /// ```
   @useResult
@@ -256,7 +314,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2]).zipWith(
-  ///   NonEmptyList.of(10, [20]),
+  ///   NonEmptyList.of(10, [20, 30]),
   ///   (left, right) => left + right,
   /// );
   /// // [11, 22]
@@ -277,27 +335,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
     return NonEmptyList._(combined);
   }
 
-  /// Returns these elements as a [NonEmptyList], preserving iteration order.
-  ///
-  /// Returns this object unchanged when it is already a [NonEmptyList].
-  /// Otherwise, eagerly materializes a new list in iteration order.
-  ///
-  /// ```dart
-  /// NonEmptySet.of(1, [2]).toNonEmptyList(); // [1, 2]
-  /// ```
-  @useResult
-  NonEmptyList<T> toNonEmptyList();
-
-  /// Returns these elements as a [NonEmptySet], discarding duplicates.
-  ///
-  /// Returns this object unchanged when it is already a [NonEmptySet].
-  /// Otherwise, eagerly materializes a new set in first-occurrence order.
-  ///
-  /// ```dart
-  /// NonEmptyList.of(1, [2, 1]).toNonEmptySet(); // {1, 2}
-  /// ```
-  @useResult
-  NonEmptySet<T> toNonEmptySet();
+//endregion
 }
 
 /// Adds one-level flattening to nested non-empty iterables.
@@ -308,12 +346,17 @@ extension FlattenNonEmptyIterableExtension<T>
   /// ```dart
   /// final nested = NonEmptyList.of(
   ///   NonEmptyList.of(1, [2]),
-  ///   [NonEmptyList.of(3)],
+  ///   [
+  ///     NonEmptyList.of(3),
+  ///     NonEmptyList.of(4, [5]),
+  ///   ],
   /// );
-  /// nested.flatten(); // [1, 2, 3]
+  /// nested.flatten(); // [1, 2, 3, 4, 5]
   /// ```
   @useResult
-  NonEmptyList<T> flatten() => flatMapToNonEmptyList((elements) => elements);
+  NonEmptyList<T> flatten() => flatMapToNonEmptyList(_identity);
+
+  static T _identity<T>(T value) => value;
 }
 
 /// Adds pair splitting to non-empty iterables of records.
@@ -326,8 +369,13 @@ extension UnzipNonEmptyIterableExtension<A, B> on NonEmptyIterable<(A, B)> {
   /// // ([1, 2], ['a', 'b'])
   /// ```
   @useResult
-  (NonEmptyList<A>, NonEmptyList<B>) unzip() => (
-        NonEmptyList._([for (final (first, _) in this) first]),
-        NonEmptyList._([for (final (_, second) in this) second]),
-      );
+  (NonEmptyList<A>, NonEmptyList<B>) unzip() {
+    final first = <A>[];
+    final second = <B>[];
+    for (final element in this) {
+      first.add(element.$1);
+      second.add(element.$2);
+    }
+    return (NonEmptyList._(first), NonEmptyList._(second));
+  }
 }
