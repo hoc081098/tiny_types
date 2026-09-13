@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'option.dart';
 
 part 'non_empty_list.dart';
+
 part 'non_empty_set.dart';
 
 /// An [Iterable] that always contains at least one element.
@@ -47,11 +48,14 @@ part 'non_empty_set.dart';
 /// Inherited transformations such as [map], [where], and [expand] keep the
 /// standard lazy [Iterable] semantics. Their return type no longer represents
 /// the non-empty guarantee, and filtering or expanding may actually produce no
-/// elements. Non-empty-preserving transformations such as
+/// elements.
+///
+/// Non-empty-preserving transformations such as
 /// [mapIndexedToNonEmptyList] and [flatMapToNonEmptyList] eagerly materialize a
 /// [NonEmptyList]. A `ToNonEmptySet` variant is available when equal results
-/// should be collapsed. [plus] and [plusAll] return the same kind of collection
-/// as their receiver.
+/// should be collapsed.
+///
+/// [plus] and [plusAll] return the same kind of collection as their receiver.
 sealed class NonEmptyIterable<T> extends Iterable<T> {
   const NonEmptyIterable._();
 
@@ -65,13 +69,20 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   @useResult
   T get head;
 
+  @override
+  @nonVirtual
+  @useResult
+  T get first => head;
+
   /// Always `false`.
   @override
+  @nonVirtual
   @useResult
   bool get isEmpty => false;
 
   /// Always `true`.
   @override
+  @nonVirtual
   @useResult
   bool get isNotEmpty => true;
 

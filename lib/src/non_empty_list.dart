@@ -223,10 +223,6 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  T get first => _elements[0];
-
-  @override
-  @useResult
   T get last => _elements[_elements.length - 1];
 
   @override

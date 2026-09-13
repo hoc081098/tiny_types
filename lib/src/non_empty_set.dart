@@ -198,10 +198,6 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  T get first => _elements.first;
-
-  @override
-  @useResult
   T get last => _elements.last;
 
   @override
