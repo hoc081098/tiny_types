@@ -75,6 +75,16 @@ void main() {
     });
 
     group('list views', () {
+      test('tail returns an unmodifiable view', () {
+        final list = NonEmptyList.of(1, const [2]);
+        final view = list.tail;
+
+        expect(view, [2]);
+        expect(() => view.add(3), throwsUnsupportedError);
+        expect(() => view[0] = 3, throwsUnsupportedError);
+        expect(view.sort, throwsUnsupportedError);
+      });
+
       test('asList returns an unmodifiable view', () {
         final list = NonEmptyList.of(1, const [2]);
         final view = list.asList();
