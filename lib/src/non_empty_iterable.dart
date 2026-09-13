@@ -338,6 +338,8 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
 //endregion
 }
 
+T _identity<T>(T value) => value;
+
 /// Adds one-level flattening to nested non-empty iterables.
 extension FlattenNonEmptyIterableExtension<T>
     on NonEmptyIterable<NonEmptyIterable<T>> {
@@ -355,8 +357,6 @@ extension FlattenNonEmptyIterableExtension<T>
   /// ```
   @useResult
   NonEmptyList<T> flatten() => flatMapToNonEmptyList(_identity);
-
-  static T _identity<T>(T value) => value;
 }
 
 /// Adds pair splitting to non-empty iterables of records.

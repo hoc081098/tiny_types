@@ -71,7 +71,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  NonEmptyList<T> distinct() => distinctBy<T>((element) => element);
+  NonEmptyList<T> distinct() => distinctBy<T>(_identity);
 
   @override
   @useResult
