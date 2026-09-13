@@ -19,8 +19,8 @@ void main() {
       expect(result, [(1, 'a'), (2, 'b')]);
     });
 
-    test('flatMap accepts either implementation', () {
-      final result = NonEmptySet.of(1, const [2]).flatMap(
+    test('flatMapToNonEmptyList accepts either implementation', () {
+      final result = NonEmptySet.of(1, const [2]).flatMapToNonEmptyList(
         (value) => NonEmptyList.of(value, [value]),
       );
 

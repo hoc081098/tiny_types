@@ -33,7 +33,7 @@ part 'non_empty_set.dart';
 /// standard lazy [Iterable] semantics. Their return type no longer represents
 /// the non-empty guarantee, and filtering or expanding may actually produce no
 /// elements. Non-empty-preserving transformations such as
-/// [mapIndexedToNonEmptyList] and [flatMap] eagerly materialize a
+/// [mapIndexedToNonEmptyList] and [flatMapToNonEmptyList] eagerly materialize a
 /// [NonEmptyList]. A `ToNonEmptySet` variant is available when equal results
 /// should be collapsed. [plus] and [plusAll] return the same kind of collection
 /// as their receiver.
@@ -184,13 +184,13 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2])
-  ///     .flatMap(
+  ///     .flatMapToNonEmptyList(
   ///       (value) => NonEmptyList.of(value, [-value]),
   ///     );
   /// // [1, -1, 2, -2]
   /// ```
   @useResult
-  NonEmptyList<R> flatMap<R>(
+  NonEmptyList<R> flatMapToNonEmptyList<R>(
     NonEmptyIterable<R> Function(T element) toElements,
   ) =>
       NonEmptyList._([
@@ -294,7 +294,7 @@ extension FlattenNonEmptyIterableExtension<T>
   /// nested.flatten(); // [1, 2, 3]
   /// ```
   @useResult
-  NonEmptyList<T> flatten() => flatMap((elements) => elements);
+  NonEmptyList<T> flatten() => flatMapToNonEmptyList((elements) => elements);
 }
 
 /// Adds pair splitting to non-empty iterables of records.

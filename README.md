@@ -172,21 +172,21 @@ final NonEmptySet<bool> parity =
     scores.mapToNonEmptySet((score) => score.isEven);
 
 final NonEmptyList<int> doubled =
-    scores.flatMap(
+    scores.flatMapToNonEmptyList(
       (score) => NonEmptyList.of(score, [score]),
     );
 ```
 
 The available materializing transformations are `mapToNonEmptyList`,
 `mapToNonEmptySet`, `mapIndexedToNonEmptyList`,
-`mapIndexedToNonEmptySet`, `flatMap`, and `flatMapToNonEmptySet`. The `flatMap`
-variants require each callback result to be a `NonEmptyIterable`, so the
-combined result cannot be empty.
+`mapIndexedToNonEmptySet`, `flatMapToNonEmptyList`, and
+`flatMapToNonEmptySet`. Both flat-mapping methods require each callback result
+to be a `NonEmptyIterable`, so the combined result cannot be empty.
 
 The explicit `mapIndexedToNonEmptyList` name avoids changing the lazy
 `mapIndexed` semantics supplied by `package:collection` when that extension is
-imported. `package:collection` does not define `flatMap`, so `flatMap` can keep
-the Arrow-style name without shadowing one of its iterable extensions.
+imported. The `flatMapToNonEmptyList` and `flatMapToNonEmptySet` names likewise
+make the materialized result type explicit.
 
 ### Converting from an existing collection
 
@@ -218,9 +218,10 @@ total(NonEmptyList.of(1, [2, 2])); // 5
 total(NonEmptySet.of(1, [2, 2])); // 3
 ```
 
-`mapToNonEmptyList`, `mapIndexedToNonEmptyList`, and `flatMap` preserve
-iteration order and duplicates. Their `ToNonEmptySet` counterparts preserve
-first-occurrence order and collapse equal values.
+`mapToNonEmptyList`, `mapIndexedToNonEmptyList`, and
+`flatMapToNonEmptyList` preserve iteration order and duplicates. Their
+`ToNonEmptySet` counterparts preserve first-occurrence order and collapse equal
+values.
 
 ## Design goals
 

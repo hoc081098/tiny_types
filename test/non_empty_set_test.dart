@@ -172,8 +172,8 @@ void main() {
         expect(result.head, 1);
       });
 
-      test('flatMap concatenates the results', () {
-        final result = NonEmptySet.of(1, const [2]).flatMap(
+      test('flatMapToNonEmptyList concatenates the results', () {
+        final result = NonEmptySet.of(1, const [2]).flatMapToNonEmptyList(
           (value) => NonEmptySet.of(value, [-value]),
         );
 
