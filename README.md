@@ -1,18 +1,14 @@
 # tiny_types
 
-Small, focused utility types for Dart.
-
 `tiny_types` provides lightweight, reusable types that are useful in everyday
 Dart applications without requiring a full functional programming library.
 
-## Features
-
-- `Option<T>` — represents the presence or absence of a value.
-- `Unit` — represents a meaningful value when no data needs to be returned.
-- `NonEmptyCollection<T>` — common abstraction for collections guaranteed to contain at least one element.
-- `NonEmptyList<T>` — a list guaranteed to contain at least one element.
-- `NonEmptySet<T>` — a set guaranteed to contain at least one element.
-- Related constructors, transformations, extensions, and utility functions.
+- `Option<T>` represents a value that **may be absent**.
+- `Unit` represents a **meaningful result with no payload**.
+- `NonEmptyList<T>` preserves **order and duplicates** while guaranteeing
+  **at least one element**.
+- `NonEmptySet<T>` keeps **unique elements in first-occurrence order** while
+  guaranteeing **at least one element**.
 
 ## Installation
 
@@ -23,121 +19,100 @@ dependencies:
 
 ## Option
 
-Use `Option<T>` when a value may or may not exist without representing absence
-with `null`.
+Use `Option<T>` when absence is part of the API instead of passing `null`
+through every step.
 
 ```dart
-final Option<int> some = Option.some(42);
-final Option<int> none = Option.none();
+String displayName(String? input) => input
+    .toOption()
+    .map((value) => value.trim())
+    .filter((value) => value.isNotEmpty)
+    .getOrElse(() => 'Guest');
 
-final doubled = some.map((value) => value * 2);
-final value = doubled.getOrElse(() => 0); // 84
-
-final message = doubled.fold(
-  ifSome: (value) => 'The answer is $value',
-  ifNone: () => 'No answer',
-);
+displayName(' Ada '); // Ada
+displayName(null); // Guest
 ```
+
+`fold` handles both `Some` and `None` when each case needs different behavior.
 
 ## Unit
 
-`Unit` represents a successful result with no payload.
-
-### Why not `void`?
-
-In Dart, `void` does not mean that no object exists at runtime. It marks a
-result as meaningless and prevents callers from consuming it as an ordinary
-value. A `void` result cannot be read, compared, or transformed, or passed to
-an API that expects a meaningful value. The value produced by
-`await Future<void>` is equally unusable.
-
-There is another subtle difference: a `void Function()` can accept a function
-with any return type and silently discard its result.
+Use `Unit` when a successful result has no payload but must remain a value,
+for example in `Option<Unit>` or `Future<Unit>`. Use `void` when callers should
+simply discard the result.
 
 ```dart
-int calculate() => 42;
-
-void Function() callback = calculate; // Valid; 42 is discarded.
+final Option<Unit> saved = Option.some(Unit.value);
 ```
-
-That behavior is useful when a callback's result truly does not matter, but it
-does not model a single predictable result. A `Unit Function()` has a stricter
-contract: when it completes normally, it must return `Unit.value`.
-
-```dart
-Future<Unit> saveSettings() async {
-  await repository.save();
-  return Unit.value;
-}
-
-Future<Option<Unit>> saveAndWrap() async {
-  final saved = await saveSettings();
-  return Option.some(saved);
-}
-```
-
-Unlike `void`, `Unit.value` can be stored, passed, compared, and transformed.
-This makes types such as `Option<Unit>`, `Future<Unit>`, or
-`Result<Failure, Unit>` useful for representing success without inventing a
-payload.
-
-Prefer `void` or `Future<void>` when callers should discard the result. Use
-`Unit` when a no-payload result needs to remain a first-class value.
 
 ## Non-empty collections
 
-TBD - Unimplemented.
-
-Non-empty collection types guarantee at the type level that at least one
-element exists.
-
-```dart
-final users = NonEmptyList.of(
-  firstUser,
-  [secondUser, thirdUser],
-);
-```
-
-This allows APIs to express requirements such as:
+`NonEmptyList` and `NonEmptySet` guarantee at least one element. Their shared
+sealed base, `NonEmptyIterable<T>`, lets an API accept either kind. `head` and
+`reduce` cannot fail due to an empty collection.
 
 ```dart
-void sendNotifications(NonEmptyList<User> recipients) {
-  // recipients can never be empty.
-}
+final cart = NonEmptyList.of('coffee', ['tea', 'coffee']);
+final products = cart.toNonEmptySet(); // {coffee, tea}
 ```
 
-instead of accepting a regular `List<User>` and validating it at runtime at
-every call site.
+For an existing `Iterable` that might be empty, use
+`toNonEmptyListOrNull()`, `toNonEmptyListOrNone()`, or
+`toNonEmptyListOrThrow()`. The matching `toNonEmptySetOrNull()`,
+`toNonEmptySetOrNone()`, and `toNonEmptySetOrThrow()` conversions deduplicate
+elements.
 
-## Design goals
+### Read-only by design
 
-`tiny_types` is intentionally small and focused.
+Both types are `Iterable`s, not `List`s or `Set`s: their mutable members are
+not available. `plus` and `plusAll` return new non-empty collections.
+`NonEmptyList` also provides indexing and list searches; `NonEmptySet`
+provides `containsAll`, `lookup`, and a non-empty `union`.
+`NonEmptyList` equality considers order; `NonEmptySet` equality does not.
 
-The package aims to provide useful foundational types and their closely related
-utilities without becoming a large functional programming framework.
+Use `asList()` or `asSet()` for an unmodifiable view when another API requires
+a `List` or `Set`. Standard `toList()` and `toSet()` create modifiable copies.
+Operations that may become empty, such as `where` or set difference, return
+plain Dart collection types.
 
-- Small API surface
-- Strong type safety
-- Practical Dart-friendly APIs
-- Minimal dependencies
-- Predictable semantics
-- Easy interoperability with other libraries
+### Lazy or guaranteed non-empty
 
-## Related packages
+Standard `Iterable` transformations (`map`, `where`, `expand`) stay lazy and
+return `Iterable`. Choose an eager `ToNonEmptyList` or `ToNonEmptySet` method
+when the result must retain the non-empty guarantee:
 
-`tiny_types` is designed to work well as a lightweight foundation for packages
-such as [`dart_either`](https://pub.dev/packages/dart_either).
+```dart
+final labels = cart.mapIndexedToNonEmptyList(
+  (index, item) => '${index + 1}. $item',
+); // [1. coffee, 2. tea, 3. coffee]
 
-For example, integrations can provide conversions such as:
-
-```text
-Either<L, R> -> Option<R>
-Option<R> -> Either<L, R>
-Either<L, Unit>
+final uniqueLabels = cart.mapToNonEmptySet((item) => item.toUpperCase());
+// {COFFEE, TEA}
 ```
 
-See the complete runnable
-[`tiny_types` example](example/tiny_types_example.dart).
+The eager variants are `mapToNonEmptyList`, `mapToNonEmptySet`,
+`mapIndexedToNonEmptyList`, `mapIndexedToNonEmptySet`,
+`flatMapToNonEmptyList`, and `flatMapToNonEmptySet`. The flat-map callbacks
+return `NonEmptyIterable`s. List variants preserve duplicates; set variants
+deduplicate. `distinct`, `distinctBy`, and `zip` also keep the result non-empty.
+
+### Widening the element type
+
+Dart retains generic types at runtime. Viewing a `NonEmptyList<int>` as
+`NonEmptyIterable<num>` does not let its backing list accept a `double` via
+`plus` or `plusAll`. Make a checked copy with the desired runtime type first:
+
+```dart
+final NonEmptyIterable<num> widened = NonEmptyList<int>.of(1);
+final numbers = widened.castToNonEmptyList<num>().plus(1.5);
+// [1, 1.5]
+```
+
+Use `castToNonEmptySet<R>()` for a set. Both conversions check existing
+elements eagerly and throw a `TypeError` if a cast fails.
+
+See the [runnable checkout example](example/tiny_types_example.dart) for all
+four types together.
 
 ## License
 

@@ -1,32 +1,47 @@
-import 'dart:io';
-
 import 'package:tiny_types/tiny_types.dart';
 
-void main() async {
-  final rawName = _readName();
+final _savedOrders = <List<String>>[];
 
-  final greeting = rawName
+Future<void> main() async {
+  // --------- Input from a checkout form ---------
+  final customerName = _customerNameFromForm();
+  final rawItems = <String>['coffee', 'tea', 'coffee'];
+
+  // --------- Optional customer name ---------
+  final displayName = customerName
       .toOption()
       .map((name) => name.trim())
       .filter((name) => name.isNotEmpty)
-      .map((name) => 'Hello, $name!')
-      .getOrElse(() => 'Hello!');
-  _log(greeting);
+      .getOrElse(() => 'Guest');
 
-  final result = await _saveSettings();
-  _log('Settings saved: $result');
+  // --------- Non-empty cart ---------
+  final cart = rawItems.toNonEmptyListOrNull();
+  if (cart == null) {
+    _log('Cart is empty; nothing to save.');
+    return;
+  }
+
+  final lines = cart.mapIndexedToNonEmptyList(
+    (index, item) => '${index + 1}. $item',
+  );
+  final products = cart.toNonEmptySet();
+
+  _log('Customer: $displayName');
+  _log('Items: ${lines.join(', ')}');
+  _log('Unique products: ${products.join(', ')}');
+
+  // --------- Save the order ---------
+  final saved = await _saveOrder(cart);
+  _log('Saved: $saved');
 }
 
-String? _readName() {
-  // Example output is intentionally written to the console.
-  // ignore: avoid_print
-  print('Enter your name:');
-  return stdin.readLineSync();
-}
+// --------- Sample form data ---------
+String? _customerNameFromForm() => ' Ada ';
 
-Future<Unit> _saveSettings() async {
-  await Future<void>.value();
-  return Unit.value;
+// --------- In-memory order store ---------
+Future<Unit> _saveOrder(NonEmptyList<String> cart) {
+  _savedOrders.add(cart.toList());
+  return Unit.future;
 }
 
 void _log(String message) {

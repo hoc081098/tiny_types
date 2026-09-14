@@ -1,3 +1,3 @@
 ## 1.0.0 - TBD
 
-- Initial version.
+- Initial version: `Unit`, `Option`, `NonEmptyList`, and `NonEmptySet`.
