@@ -98,6 +98,9 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// Returns a new collection with [element] added.
   ///
   /// A [NonEmptySet] keeps only one occurrence of an equal element.
+  /// A covariantly widened receiver may still reject [element] at run time.
+  /// Use [castToNonEmptyList] or [castToNonEmptySet] to copy it with a wider
+  /// runtime element type before adding the element.
   ///
   /// ```dart
   /// NonEmptyList.of(1).plus(2); // [1, 2]
@@ -111,6 +114,9 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// Returns a new collection with all [elements] added.
   ///
   /// A [NonEmptySet] keeps only the first occurrence of each element.
+  /// A covariantly widened receiver may still reject [elements] at run time.
+  /// Use [castToNonEmptyList] or [castToNonEmptySet] to copy it with a wider
+  /// runtime element type before adding the elements.
   ///
   /// ```dart
   /// NonEmptyList.of(1).plusAll([2, 3]); // [1, 2, 3]
@@ -178,6 +184,47 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   @useResult
   NonEmptySet<T> toNonEmptySet();
 
+  /// Casts the elements to [R] in a new [NonEmptyList].
+  ///
+  /// Unlike the lazy view returned by [Iterable.cast], this eagerly copies
+  /// the elements in iteration order. The result has [R] as its runtime
+  /// element type, even when this collection already contains only [R] values.
+  /// Throws a [TypeError] immediately if any element is not an [R].
+  ///
+  /// This is useful after covariance widens a collection's static element
+  /// type but leaves its runtime element type narrower: [plus] and [plusAll]
+  /// would still check arguments against that narrower type.
+  ///
+  /// ```dart
+  /// final NonEmptyIterable<num> numbers = NonEmptyList<int>.of(1);
+  /// numbers.castToNonEmptyList<num>().plus(1.5); // [1, 1.5]
+  /// ```
+  @useResult
+  @nonVirtual
+  NonEmptyList<R> castToNonEmptyList<R>() =>
+      mapToNonEmptyList<R>((element) => element as R);
+
+  /// Casts the elements to [R] in a new [NonEmptySet].
+  ///
+  /// Unlike the lazy view returned by [Iterable.cast], this eagerly copies
+  /// the elements, keeping the first occurrence of each value in iteration
+  /// order. The result has [R] as its runtime element type, even when this
+  /// collection already contains only [R] values. Throws a [TypeError]
+  /// immediately if any element is not an [R].
+  ///
+  /// This is useful after covariance widens a collection's static element
+  /// type but leaves its runtime element type narrower: [plus] and [plusAll]
+  /// would still check arguments against that narrower type.
+  ///
+  /// ```dart
+  /// final NonEmptyIterable<num> numbers = NonEmptySet<int>.of(1);
+  /// numbers.castToNonEmptySet<num>().plus(1.5); // {1, 1.5}
+  /// ```
+  @useResult
+  @nonVirtual
+  NonEmptySet<R> castToNonEmptySet<R>() =>
+      mapToNonEmptySet<R>((element) => element as R);
+
   //endregion
 
   // --------------------------------------------------------------------------
@@ -193,6 +240,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   ///     .mapToNonEmptyList((value) => value * 2); // [2, 4]
   /// ```
   @useResult
+  @nonVirtual
   NonEmptyList<R> mapToNonEmptyList<R>(
     R Function(T element) toElement,
   ) =>
@@ -208,6 +256,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   ///     .mapToNonEmptySet((value) => value.isEven); // {false, true}
   /// ```
   @useResult
+  @nonVirtual
   NonEmptySet<R> mapToNonEmptySet<R>(
     R Function(T element) toElement,
   ) =>
@@ -228,6 +277,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   ///     ); // ['0a', '1b']
   /// ```
   @useResult
+  @nonVirtual
   NonEmptyList<R> mapIndexedToNonEmptyList<R>(
     R Function(int index, T element) toElement,
   ) =>
@@ -247,6 +297,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   ///     ); // {'0a', '1b'}
   /// ```
   @useResult
+  @nonVirtual
   NonEmptySet<R> mapIndexedToNonEmptySet<R>(
     R Function(int index, T element) toElement,
   ) =>
@@ -268,6 +319,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// // [1, -1, 2, -2]
   /// ```
   @useResult
+  @nonVirtual
   NonEmptyList<R> flatMapToNonEmptyList<R>(
     NonEmptyIterable<R> Function(T element) toElements,
   ) =>
@@ -289,6 +341,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// // {1, -1, 2, -2}
   /// ```
   @useResult
+  @nonVirtual
   NonEmptySet<R> flatMapToNonEmptySet<R>(
     NonEmptyIterable<R> Function(T element) toElements,
   ) =>
@@ -306,6 +359,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// // [(1, 'a'), (2, 'b')]
   /// ```
   @useResult
+  @nonVirtual
   NonEmptyList<(T, R)> zip<R>(NonEmptyIterable<R> other) =>
       zipWith(other, (element, otherElement) => (element, otherElement));
 
@@ -322,6 +376,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// // [11, 22]
   /// ```
   @useResult
+  @nonVirtual
   NonEmptyList<R> zipWith<R, U>(
     NonEmptyIterable<U> other,
     R Function(T element, U otherElement) combine,

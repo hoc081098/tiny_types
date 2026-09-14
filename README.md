@@ -136,6 +136,23 @@ tags.asSet().difference(banned); // Possibly empty, so it is a plain `Set`.
 `plus`, `plusAll`, `distinct`, and `distinctBy` preserve the concrete non-empty
 kind. `operator +` provides the corresponding shorthand for `NonEmptyList`.
 
+Dart retains generic type arguments at runtime. If an `int` collection is
+viewed as `NonEmptyIterable<num>`, `plus(1.5)` or `plusAll([1.5])` can still
+throw a `TypeError`: the underlying collection still expects `int`. Use
+`castToNonEmptyList<R>()` or `castToNonEmptySet<R>()` to make an eager copy with
+the desired runtime element type before adding values:
+
+```dart
+final NonEmptyIterable<num> widened = NonEmptyList<int>.of(1);
+final NonEmptyList<num> numbers = widened.castToNonEmptyList<num>();
+numbers.plus(1.5); // [1, 1.5]
+```
+
+Both methods check every existing element immediately, throwing a `TypeError`
+if one cannot be cast to `R`. The set variant discards duplicates. Unlike
+`Iterable.cast<R>()`, these methods return materialized non-empty collections,
+not lazy views.
+
 `NonEmptyIterable<T>` is a sealed type, so `NonEmptyList` and `NonEmptySet`
 are its only implementations and a switch over them is exhaustive.
 

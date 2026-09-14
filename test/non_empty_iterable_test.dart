@@ -99,6 +99,54 @@ void main() {
       expect(list.toNonEmptySet().toNonEmptySet(), {1, 2});
     });
 
+    test('castToNonEmptyList makes a widened element type usable', () {
+      final NonEmptyIterable<num> widened = NonEmptyList<int>.of(1);
+
+      expect(() => widened.plus(1.5), throwsA(isA<TypeError>()));
+      expect(() => widened.plusAll(<num>[1.5]), throwsA(isA<TypeError>()));
+
+      final result = widened.castToNonEmptyList<num>();
+
+      expect(identical(result, widened), isFalse);
+      expect(result, isA<NonEmptyList<num>>());
+      expect(result.plus(1.5), [1, 1.5]);
+      expect(result.plusAll(<num>[2.5]), [1, 2.5]);
+      expect(widened, [1]);
+    });
+
+    test('castToNonEmptySet makes a widened element type usable', () {
+      final NonEmptyIterable<num> widened = NonEmptySet<int>.of(1);
+
+      expect(() => widened.plus(1.5), throwsA(isA<TypeError>()));
+      expect(() => widened.plusAll(<num>[1.5]), throwsA(isA<TypeError>()));
+
+      final result = widened.castToNonEmptySet<num>();
+
+      expect(identical(result, widened), isFalse);
+      expect(result, isA<NonEmptySet<num>>());
+      expect(result.plus(1.5), {1, 1.5});
+      expect(result.plusAll(<num>[2.5]), {1, 2.5});
+      expect(widened, {1});
+    });
+
+    test('cast-copy conversions preserve order and set uniqueness', () {
+      final list = NonEmptyList.of(2, const [1, 2]);
+      final set = NonEmptySet.of(2, const [1]);
+
+      expect(list.castToNonEmptySet<num>().toList(), [2, 1]);
+      expect(set.castToNonEmptyList<num>(), [2, 1]);
+      expect(identical(list.castToNonEmptyList<int>(), list), isFalse);
+      expect(identical(set.castToNonEmptySet<int>(), set), isFalse);
+    });
+
+    test('cast-copy conversions reject incompatible elements eagerly', () {
+      final NonEmptyIterable<Object> values =
+          NonEmptyList<Object>.of(1, const ['not a number']);
+
+      expect(() => values.castToNonEmptyList<num>(), throwsA(isA<TypeError>()));
+      expect(() => values.castToNonEmptySet<num>(), throwsA(isA<TypeError>()));
+    });
+
     test('is a sealed hierarchy of exactly two kinds', () {
       String kindOf(NonEmptyIterable<int> collection) => switch (collection) {
             NonEmptyList<int>() => 'list',
