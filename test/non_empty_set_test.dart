@@ -120,6 +120,33 @@ void main() {
         expect(result.head, 1);
         expect(result, {1, 2});
       });
+
+      test('union keeps order without changing either set', () {
+        final left = NonEmptySet.of(2, const [1]);
+        final right = NonEmptySet.of(1, const [3]);
+        final result = left.union(right);
+
+        expect(result, isA<NonEmptySet<int>>());
+        expect(result.head, 2);
+        expect(result.toList(), [2, 1, 3]);
+        expect(left.toList(), [2, 1]);
+        expect(right.toList(), [1, 3]);
+        expect(identical(result, left), isFalse);
+      });
+
+      test('union with itself stays non-empty and keeps order', () {
+        final set = NonEmptySet.of(2, const [1]);
+
+        expect(set.union(set).toList(), [2, 1]);
+      });
+
+      test('union works after copying a covariantly widened set', () {
+        final NonEmptySet<num> widened = NonEmptySet<int>.of(1);
+        final other = NonEmptySet<num>.of(1.5);
+
+        expect(() => widened.union(other), throwsA(isA<TypeError>()));
+        expect(widened.castToNonEmptySet<num>().union(other), {1, 1.5});
+      });
     });
 
     group('transformations', () {
@@ -205,6 +232,17 @@ void main() {
 
         expect(result, {'one', 'three'});
         expect(result, isA<NonEmptySet<String>>());
+      });
+
+      test('distinctBy calls selector once per element in order', () {
+        final visited = <int>[];
+        final result = NonEmptySet.of(1, const [2, 3]).distinctBy((value) {
+          visited.add(value);
+          return value.isOdd;
+        });
+
+        expect(visited, [1, 2, 3]);
+        expect(result.toList(), [1, 2]);
       });
 
       test('zip pairs elements by position', () {

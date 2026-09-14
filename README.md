@@ -135,6 +135,11 @@ tags.asSet().difference(banned); // Possibly empty, so it is a plain `Set`.
 
 `plus`, `plusAll`, `distinct`, and `distinctBy` preserve the concrete non-empty
 kind. `operator +` provides the corresponding shorthand for `NonEmptyList`.
+`NonEmptyList` also offers read-only list searches (`indexOf`, `lastIndexOf`,
+`indexWhere`, `lastIndexWhere`), indexing, and `reversed`. `NonEmptySet` offers
+`containsAll`, `lookup`, and `union`; `union` takes another `NonEmptySet` and
+returns a non-empty set. Use `asSet()` for set operations such as intersection
+and difference, whose results may be empty.
 
 Dart retains generic type arguments at runtime. If an `int` collection is
 viewed as `NonEmptyIterable<num>`, `plus(1.5)` or `plusAll([1.5])` can still

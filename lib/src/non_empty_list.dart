@@ -1,28 +1,38 @@
 part of 'non_empty_iterable.dart';
 
-/// An immutable [NonEmptyIterable] that preserves element order and
-/// duplicates.
+/// An immutable [NonEmptyIterable] that models an ordered list guaranteed to
+/// contain at least one element. It preserves duplicates.
 ///
-/// `NonEmptyList<T>` is an [Iterable] but deliberately not a [List]: the [List]
-/// interface declares mutating members that an immutable list could only
-/// implement by throwing at run time. Use [asList] to hand the elements to an
-/// API that needs a [List], [operator []] to read one by index, and
-/// [Iterable.toList] for a modifiable copy.
-/// Common [Iterable] operations delegate directly to the backing list so they
-/// retain its specialized implementations; lazy operations remain lazy.
+/// ## Creating a list
 ///
-/// Create one with [NonEmptyList.of] when the first element is known
-/// statically, or with [IterableToNonEmptyListExtension] when starting from an
-/// [Iterable] whose length is only known at run time.
+/// [NonEmptyList.of] takes a required first element, so the result cannot be
+/// empty. For a possibly empty [Iterable], [IterableToNonEmptyListExtension]
+/// provides `toNonEmptyListOrNull()`, `toNonEmptyListOrNone()`, and
+/// `toNonEmptyListOrThrow()`.
 ///
 /// ```dart
-/// void sendNotifications(NonEmptyList<String> recipients) {
-///   // `recipients` can never be empty, and nothing can add to it.
-///   print('First recipient: ${recipients.head}');
-/// }
-///
-/// sendNotifications(NonEmptyList.of('ada@example.com'));
+/// final recipients = NonEmptyList.of('ada@example.com', [
+///   'grace@example.com',
+/// ]);
+/// recipients.head; // 'ada@example.com'
 /// ```
+///
+/// ## Read-only list operations
+///
+/// Use [operator []], [indexOf], and [reversed] as with a [List].
+/// [NonEmptyList] does not implement [List], whose interface includes mutating
+/// members. [asList] provides an unmodifiable [List] view for APIs requiring
+/// one; [Iterable.toList] creates a modifiable copy. [plus] and [plusAll]
+/// return new non-empty lists without changing this one.
+///
+/// ## Transformations and equality
+///
+/// Standard [Iterable] operations delegate to the backing list. In particular,
+/// [map], [where], and [expand] remain lazy and return plain [Iterable]
+/// results.
+/// Use [mapToNonEmptyList] or [flatMapToNonEmptyList] when the result must stay
+/// non-empty. Two non-empty lists are equal when their elements compare equal
+/// in the same order; a plain [List] is not equal to a [NonEmptyList].
 @immutable
 final class NonEmptyList<T> extends NonEmptyIterable<T> {
   /// Wraps a list without copying it.
@@ -102,9 +112,9 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 
   /// Returns these elements as an unmodifiable [List].
   ///
-  /// The result is a view, so it is created in constant time and reflects no
-  /// later changes, because this list can never change. Its mutating members
-  /// throw [UnsupportedError]; use [Iterable.toList] for a modifiable copy.
+  /// The view is created in constant time and remains unchanged because this
+  /// list is immutable. Its mutating members throw [UnsupportedError]; use
+  /// [Iterable.toList] for a modifiable copy.
   ///
   /// ```dart
   /// void render(List<String> lines) {}
@@ -117,7 +127,6 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   // List-like.
 
   /// The element at [index].
-  /// As [List.elementAt].
   ///
   /// Reading index `0` never throws. Throws a [RangeError] for any other index
   /// outside `0` until [length] minus one.
@@ -128,8 +137,10 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   T operator [](int index) => _elements[index];
 
-  /// Returns a new list with the elements of [other] appended.
-  /// As [List.+], but the return type is [NonEmptyList].
+  /// Returns a new [NonEmptyList] with the elements of [other] appended.
+  ///
+  /// Like [List.+], this does not change the original list. See [plusAll] for
+  /// the runtime type check that applies to a covariantly widened receiver.
   ///
   /// ```dart
   /// NonEmptyList.of(1) + [2, 3]; // [1, 2, 3]
@@ -137,8 +148,9 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   NonEmptyList<T> operator +(Iterable<T> other) => plusAll(other);
 
-  /// The elements of this list in reverse order.
-  /// As [List.reversed], but the return type is [NonEmptyList].
+  /// The elements of this list in reverse order, as a [NonEmptyList].
+  ///
+  /// Like [List.reversed], this does not change the original list.
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2]).reversed; // [2, 1]
@@ -151,18 +163,30 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   int get length => _elements.length;
 
-  /// As [List.indexOf].
+  /// The first index of [element] at or after [start], or `-1` if absent.
+  ///
+  /// [start] follows the same rules as [List.indexOf].
+  @useResult
   int indexOf(T element, [int start = 0]) => _elements.indexOf(element, start);
 
-  /// As [List.lastIndexOf].
+  /// The last index of [element] at or before [start], or `-1` if absent.
+  ///
+  /// Omitting [start] searches from the end, as in [List.lastIndexOf].
+  @useResult
   int lastIndexOf(T element, [int? start]) =>
       _elements.lastIndexOf(element, start);
 
-  /// As [List.indexWhere].
+  /// The first index at or after [start] matching [test], or `-1` if none.
+  ///
+  /// [start] follows the same rules as [List.indexWhere].
+  @useResult
   int indexWhere(bool Function(T element) test, [int start = 0]) =>
       _elements.indexWhere(test, start);
 
-  /// As [List.lastIndexWhere].
+  /// The last index at or before [start] matching [test], or `-1` if none.
+  ///
+  /// Omitting [start] searches from the end, as in [List.lastIndexWhere].
+  @useResult
   int lastIndexWhere(bool Function(T element) test, [int? start]) =>
       _elements.lastIndexWhere(test, start);
 

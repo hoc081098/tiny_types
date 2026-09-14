@@ -74,6 +74,36 @@ void main() {
       });
     });
 
+    group('list-like searches', () {
+      final list = NonEmptyList.of(1, const [2, 1, 3]);
+
+      test('indexOf searches forward from start', () {
+        expect(list.indexOf(1), 0);
+        expect(list.indexOf(1, 1), 2);
+        expect(list.indexOf(1, 3), -1);
+        expect(list.indexOf(4), -1);
+      });
+
+      test('lastIndexOf searches backward from start', () {
+        expect(list.lastIndexOf(1), 2);
+        expect(list.lastIndexOf(1, 1), 0);
+        expect(list.lastIndexOf(1, -1), -1);
+        expect(list.lastIndexOf(4), -1);
+      });
+
+      test('indexWhere searches forward from start', () {
+        expect(list.indexWhere((value) => value.isOdd), 0);
+        expect(list.indexWhere((value) => value.isOdd, 1), 2);
+        expect(list.indexWhere((value) => value.isEven, 2), -1);
+      });
+
+      test('lastIndexWhere searches backward from start', () {
+        expect(list.lastIndexWhere((value) => value.isOdd), 3);
+        expect(list.lastIndexWhere((value) => value.isOdd, 2), 2);
+        expect(list.lastIndexWhere((value) => value.isEven, 0), -1);
+      });
+    });
+
     group('list views', () {
       test('tail returns an unmodifiable view', () {
         final list = NonEmptyList.of(1, const [2]);
@@ -225,6 +255,17 @@ void main() {
 
         expect(result, ['one', 'three']);
         expect(result, isA<NonEmptyList<String>>());
+      });
+
+      test('distinctBy calls selector once per element in order', () {
+        final visited = <int>[];
+        final result = NonEmptyList.of(1, const [2, 3]).distinctBy((value) {
+          visited.add(value);
+          return value.isOdd;
+        });
+
+        expect(visited, [1, 2, 3]);
+        expect(result, [1, 2]);
       });
 
       test('flatten removes one level of nesting', () {

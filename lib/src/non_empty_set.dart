@@ -1,28 +1,40 @@
 part of 'non_empty_iterable.dart';
 
-/// An immutable [NonEmptyIterable] of unique elements.
+/// An immutable [NonEmptyIterable] that models a set guaranteed to contain at
+/// least one element. It keeps unique values in first-occurrence order.
 ///
-/// `NonEmptySet<T>` is an [Iterable] but deliberately not a [Set]: the [Set]
-/// interface declares mutating members that an immutable set could only
-/// implement by throwing at run time. Use [asSet] to hand the elements to an
-/// API that needs a [Set] or to compute an intersection or a difference, and
-/// [Iterable.toSet] for a modifiable copy.
-/// Common [Iterable] operations delegate directly to the backing set so they
-/// retain its specialized implementations; lazy operations remain lazy.
+/// ## Creating a set
 ///
-/// Elements keep their insertion order and duplicates are discarded.
-/// Inherited [Iterable] transformations remain lazy. Non-empty-preserving
-/// transformations on [NonEmptyIterable] materialize a list by default; use
-/// a `ToNonEmptySet` variant when equal results should be collapsed.
-///
-/// Create one with [NonEmptySet.of] when the first element is known
-/// statically, or with [IterableToNonEmptySetExtension] when starting from an
-/// [Iterable] whose length is only known at run time.
+/// [NonEmptySet.of] takes a required first element, so the result cannot be
+/// empty. Equal values are kept only once, in first-occurrence order. For a
+/// possibly empty [Iterable], [IterableToNonEmptySetExtension] provides
+/// `toNonEmptySetOrNull()`, `toNonEmptySetOrNone()`, and
+/// `toNonEmptySetOrThrow()`.
 ///
 /// ```dart
 /// final tags = NonEmptySet.of('dart', ['dart', 'types']);
-/// // {dart, types}
+/// tags.toList(); // ['dart', 'types']
 /// ```
+///
+/// ## Read-only set operations
+///
+/// Use [containsAll] and [lookup] as read-only set queries; [union] combines
+/// two non-empty sets into another [NonEmptySet]. This type does not implement
+/// [Set], whose interface includes mutating members. [asSet]
+/// provides an unmodifiable [Set] view for APIs requiring one or for
+/// operations such as intersection and difference that may be empty.
+/// [Iterable.toSet] creates a modifiable copy. [plus] and [plusAll] return new
+/// non-empty sets without changing this one.
+///
+/// ## Transformations and equality
+///
+/// Standard [Iterable] operations delegate to the backing set. In particular,
+/// [map], [where], and [expand] remain lazy and return plain [Iterable]
+/// results.
+/// Use [mapToNonEmptySet] or [flatMapToNonEmptySet] when the result must stay
+/// non-empty and equal results should be collapsed. Iteration preserves
+/// first-occurrence order, but equality ignores order; a plain [Set] is not
+/// equal to a [NonEmptySet].
 @immutable
 final class NonEmptySet<T> extends NonEmptyIterable<T> {
   /// Wraps a set without copying it.
@@ -92,9 +104,9 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 
   /// Returns these elements as an unmodifiable [Set].
   ///
-  /// The result is a view, so it is created in constant time and reflects no
-  /// later changes, because this set can never change. Its mutating members
-  /// throw [UnsupportedError]; use [Iterable.toSet] for a modifiable copy.
+  /// The view is created in constant time and remains unchanged because this
+  /// set is immutable. Its mutating members throw [UnsupportedError]; use
+  /// [Iterable.toSet] for a modifiable copy.
   ///
   /// ```dart
   /// final tags = NonEmptySet.of('dart', ['types']);
@@ -107,17 +119,28 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 
   // Set-like.
 
-  /// Whether this set contains every element of [other].
-  /// As [Set.containsAll].
+  /// Whether this set contains every element of [other], as in
+  /// [Set.containsAll].
   @useResult
   bool containsAll(Iterable<Object?> other) => _elements.containsAll(other);
 
-  /// As [Set.union] but takes and returns a `NonEmptySet<T>`.
+  /// Returns a new [NonEmptySet] containing the elements of both sets.
+  ///
+  /// Like [Set.union], equal elements occur only once. This set's elements
+  /// come first in iteration order, followed by new elements from [other].
+  /// Neither input changes, and the result is always non-empty.
+  /// A covariantly widened receiver may reject [other] at runtime; use
+  /// [castToNonEmptySet] to copy it with the intended runtime element type.
+  ///
+  /// ```dart
+  /// NonEmptySet.of(2, [1]).union(NonEmptySet.of(1, [3])); // {2, 1, 3}
+  /// ```
+  @useResult
   NonEmptySet<T> union(NonEmptySet<T> other) =>
       NonEmptySet._wrap(_elements.union(other._elements));
 
-  /// The element equal to [element], or `null` when there is none.
-  /// As [Set.lookup].
+  /// The element equal to [element], or `null` when there is none, as in
+  /// [Set.lookup].
   ///
   /// ```dart
   /// NonEmptySet.of(1, [2]).lookup(2); // 2

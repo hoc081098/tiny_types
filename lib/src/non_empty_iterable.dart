@@ -98,7 +98,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// Returns a new collection with [element] added.
   ///
   /// A [NonEmptySet] keeps only one occurrence of an equal element.
-  /// A covariantly widened receiver may still reject [element] at run time.
+  /// A covariantly widened receiver may still reject [element] at runtime.
   /// Use [castToNonEmptyList] or [castToNonEmptySet] to copy it with a wider
   /// runtime element type before adding the element.
   ///
@@ -114,7 +114,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// Returns a new collection with all [elements] added.
   ///
   /// A [NonEmptySet] keeps only the first occurrence of each element.
-  /// A covariantly widened receiver may still reject [elements] at run time.
+  /// A covariantly widened receiver may still reject [elements] at runtime.
   /// Use [castToNonEmptyList] or [castToNonEmptySet] to copy it with a wider
   /// runtime element type before adding the elements.
   ///
