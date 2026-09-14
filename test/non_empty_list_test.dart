@@ -399,6 +399,15 @@ void main() {
         expect(list == list, isTrue);
       });
 
+      test('equal elements with different type arguments are equal', () {
+        final integers = NonEmptyList<int>.of(1, const [2]);
+        final numbers = NonEmptyList<num>.of(1, const [2]);
+
+        expect(integers == numbers, isTrue);
+        expect(numbers == integers, isTrue);
+        expect(integers.hashCode, numbers.hashCode);
+      });
+
       test('order and length are significant', () {
         expect(
           NonEmptyList.of(1, const [2]) == NonEmptyList.of(2, const [1]),

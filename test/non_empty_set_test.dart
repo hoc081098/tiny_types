@@ -328,6 +328,15 @@ void main() {
         expect(set == set, isTrue);
       });
 
+      test('equal elements with different type arguments are equal', () {
+        final integers = NonEmptySet<int>.of(1, const [2]);
+        final numbers = NonEmptySet<num>.of(2, const [1]);
+
+        expect(integers == numbers, isTrue);
+        expect(numbers == integers, isTrue);
+        expect(integers.hashCode, numbers.hashCode);
+      });
+
       test('different elements are not equal', () {
         expect(NonEmptySet.of(1, const [2]) == NonEmptySet.of(1), isFalse);
         expect(NonEmptySet.of(1) == NonEmptySet.of(2), isFalse);
