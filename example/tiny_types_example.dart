@@ -1,53 +1,47 @@
-import 'dart:io';
-
 import 'package:tiny_types/tiny_types.dart';
 
-void main() async {
-  final rawName = _readName();
+final _savedOrders = <List<String>>[];
 
-  final greeting = rawName
+Future<void> main() async {
+  // --------- Input from a checkout form ---------
+  final customerName = _customerNameFromForm();
+  final rawItems = <String>['coffee', 'tea', 'coffee'];
+
+  // --------- Optional customer name ---------
+  final displayName = customerName
       .toOption()
       .map((name) => name.trim())
       .filter((name) => name.isNotEmpty)
-      .map((name) => 'Hello, $name!')
-      .getOrElse(() => 'Hello!');
-  _log(greeting);
+      .getOrElse(() => 'Guest');
 
-  final result = await _saveSettings();
-  _log('Settings saved: $result');
+  // --------- Non-empty cart ---------
+  final cart = rawItems.toNonEmptyListOrNull();
+  if (cart == null) {
+    _log('Cart is empty; nothing to save.');
+    return;
+  }
 
-  _reportScores([7, 3, 9]);
-  _reportScores([]);
-}
-
-void _reportScores(List<int> rawScores) {
-  final scores = rawScores.toNonEmptyListOrNone();
-
-  final report = scores.fold(
-    ifSome: _describeScores,
-    ifNone: () => 'No scores recorded',
+  final lines = cart.mapIndexedToNonEmptyList(
+    (index, item) => '${index + 1}. $item',
   );
-  _log(report);
+  final products = cart.toNonEmptySet();
+
+  _log('Customer: $displayName');
+  _log('Items: ${lines.join(', ')}');
+  _log('Unique products: ${products.join(', ')}');
+
+  // --------- Save the order ---------
+  final saved = await _saveOrder(cart);
+  _log('Saved: $saved');
 }
 
-String _describeScores(NonEmptyList<int> scores) {
-  // `head` and `reduce` cannot fail for a non-empty list.
-  final total = scores.reduce((left, right) => left + right);
-  final labels = scores.mapToNonEmptyList((score) => 'score: $score');
+// --------- Sample form data ---------
+String? _customerNameFromForm() => ' Ada ';
 
-  return '${labels.head}, total: $total';
-}
-
-String? _readName() {
-  // Example output is intentionally written to the console.
-  // ignore: avoid_print
-  print('Enter your name:');
-  return stdin.readLineSync();
-}
-
-Future<Unit> _saveSettings() async {
-  await Future<void>.value();
-  return Unit.value;
+// --------- In-memory order store ---------
+Future<Unit> _saveOrder(NonEmptyList<String> cart) {
+  _savedOrders.add(cart.toList());
+  return Unit.future;
 }
 
 void _log(String message) {
