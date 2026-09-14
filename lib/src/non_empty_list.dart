@@ -85,7 +85,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @override
   @useResult
   NonEmptyList<T> distinctBy<K>(K Function(T element) selector) {
-    final seenKeys = <K>{};
+    final seenKeys = HashSet<K>();
     return NonEmptyList._wrap([
       for (final element in _elements)
         if (seenKeys.add(selector(element))) element,
@@ -99,8 +99,6 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @override
   @useResult
   NonEmptySet<T> toNonEmptySet() => NonEmptySet._wrap(_elements.toSet());
-
-  // List-like.
 
   /// Returns these elements as an unmodifiable [List].
   ///
@@ -116,7 +114,10 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   List<T> asList() => UnmodifiableListView<T>(_elements);
 
+  // List-like.
+
   /// The element at [index].
+  /// As [List.elementAt].
   ///
   /// Reading index `0` never throws. Throws a [RangeError] for any other index
   /// outside `0` until [length] minus one.
@@ -128,6 +129,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   T operator [](int index) => _elements[index];
 
   /// Returns a new list with the elements of [other] appended.
+  /// As [List.+], but the return type is [NonEmptyList].
   ///
   /// ```dart
   /// NonEmptyList.of(1) + [2, 3]; // [1, 2, 3]
@@ -136,6 +138,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   NonEmptyList<T> operator +(Iterable<T> other) => plusAll(other);
 
   /// The elements of this list in reverse order.
+  /// As [List.reversed], but the return type is [NonEmptyList].
   ///
   /// ```dart
   /// NonEmptyList.of(1, [2]).reversed; // [2, 1]
@@ -147,6 +150,21 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @override
   @useResult
   int get length => _elements.length;
+
+  /// As [List.indexOf].
+  int indexOf(T element, [int start = 0]) => _elements.indexOf(element, start);
+
+  /// As [List.lastIndexOf].
+  int lastIndexOf(T element, [int? start]) =>
+      _elements.lastIndexOf(element, start);
+
+  /// As [List.indexWhere].
+  int indexWhere(bool Function(T element) test, [int start = 0]) =>
+      _elements.indexWhere(test, start);
+
+  /// As [List.lastIndexWhere].
+  int lastIndexWhere(bool Function(T element) test, [int? start]) =>
+      _elements.lastIndexWhere(test, start);
 
   // Iterable.
   // Delegate to the backing list for its specialized implementations.
@@ -184,6 +202,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   T reduce(T Function(T value, T element) combine) => _elements.reduce(combine);
 
   @override
+  @useResult
   R fold<R>(R initialValue, R Function(R value, T element) combine) =>
       _elements.fold(initialValue, combine);
 
@@ -273,7 +292,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
       return false;
     }
     for (var index = 0; index < length; index++) {
-      if (_elements[index] != other[index]) {
+      if (_elements[index] != other._elements[index]) {
         return false;
       }
     }

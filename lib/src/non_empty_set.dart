@@ -74,7 +74,7 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   @override
   @useResult
   NonEmptySet<T> distinctBy<K>(K Function(T element) selector) {
-    final seenKeys = <K>{};
+    final seenKeys = HashSet<K>();
     return NonEmptySet._wrap(<T>{
       for (final element in _elements)
         if (seenKeys.add(selector(element))) element,
@@ -89,8 +89,6 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   @override
   @useResult
   NonEmptySet<T> toNonEmptySet() => this;
-
-  // Set-like.
 
   /// Returns these elements as an unmodifiable [Set].
   ///
@@ -107,11 +105,19 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   @useResult
   Set<T> asSet() => UnmodifiableSetView<T>(_elements);
 
+  // Set-like.
+
   /// Whether this set contains every element of [other].
+  /// As [Set.containsAll].
   @useResult
   bool containsAll(Iterable<Object?> other) => _elements.containsAll(other);
 
+  /// As [Set.union] but takes and returns a `NonEmptySet<T>`.
+  NonEmptySet<T> union(NonEmptySet<T> other) =>
+      NonEmptySet._wrap(_elements.union(other._elements));
+
   /// The element equal to [element], or `null` when there is none.
+  /// As [Set.lookup].
   ///
   /// ```dart
   /// NonEmptySet.of(1, [2]).lookup(2); // 2
@@ -160,6 +166,7 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   T reduce(T Function(T value, T element) combine) => _elements.reduce(combine);
 
   @override
+  @useResult
   R fold<R>(R initialValue, R Function(R value, T element) combine) =>
       _elements.fold(initialValue, combine);
 
@@ -247,7 +254,7 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
       identical(this, other) ||
       other is NonEmptySet<Object?> &&
           length == other.length &&
-          other.every(_elements.contains);
+          _elements.containsAll(other._elements);
 
   /// A hash code derived from every element, independent of their order.
   @override
