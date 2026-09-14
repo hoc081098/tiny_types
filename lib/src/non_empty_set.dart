@@ -25,7 +25,15 @@ part of 'non_empty_iterable.dart';
 /// ```
 @immutable
 final class NonEmptySet<T> extends NonEmptyIterable<T> {
-  const NonEmptySet._(this._elements) : super._();
+  /// Wraps a set without copying it.
+  ///
+  /// The caller must keep the set non-empty and never mutate it afterward.
+  NonEmptySet._wrap(this._elements)
+      : assert(
+          _elements.isNotEmpty,
+          'NonEmptySet must have at least one element',
+        ),
+        super._();
 
   /// Creates a set containing [head] followed by the new values of [tail].
   ///
@@ -37,7 +45,7 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   /// final several = NonEmptySet.of(1, [2, 1]); // {1, 2}
   /// ```
   factory NonEmptySet.of(T head, [Iterable<T> tail = const <Never>[]]) =>
-      NonEmptySet._(<T>{head, ...tail});
+      NonEmptySet._wrap(<T>{head, ...tail});
 
   // Never handed out directly, and never mutated after construction, which is
   // what makes the unmodifiable view returned by `asSet` safe to share.
@@ -51,12 +59,13 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  NonEmptySet<T> plus(T element) => NonEmptySet._(<T>{..._elements, element});
+  NonEmptySet<T> plus(T element) =>
+      NonEmptySet._wrap(<T>{..._elements, element});
 
   @override
   @useResult
   NonEmptySet<T> plusAll(Iterable<T> elements) =>
-      NonEmptySet._(<T>{..._elements, ...elements});
+      NonEmptySet._wrap(<T>{..._elements, ...elements});
 
   @override
   @useResult
@@ -66,7 +75,7 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   @useResult
   NonEmptySet<T> distinctBy<K>(K Function(T element) selector) {
     final seenKeys = <K>{};
-    return NonEmptySet._(<T>{
+    return NonEmptySet._wrap(<T>{
       for (final element in _elements)
         if (seenKeys.add(selector(element))) element,
     });
@@ -74,7 +83,8 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  NonEmptyList<T> toNonEmptyList() => NonEmptyList._(_elements.toList());
+  NonEmptyList<T> toNonEmptyList() =>
+      NonEmptyList._wrap(_elements.toList(growable: false));
 
   @override
   @useResult
@@ -252,8 +262,9 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 extension IterableToNonEmptySetExtension<T> on Iterable<T> {
   /// Returns these elements as a [NonEmptySet], or `null` when empty.
   ///
-  /// The elements are copied, so later changes to this iterable are not
-  /// visible through the result.
+  /// An existing [NonEmptySet] with the exact element type is returned
+  /// unchanged. Other non-empty iterables are copied, so later changes to
+  /// them are not visible through the result.
   ///
   /// ```dart
   /// [1, 2, 1].toNonEmptySetOrNull(); // {1, 2}
@@ -261,11 +272,17 @@ extension IterableToNonEmptySetExtension<T> on Iterable<T> {
   /// ```
   @useResult
   NonEmptySet<T>? toNonEmptySetOrNull() {
-    final elements = toSet();
-    return elements.isEmpty ? null : NonEmptySet._(elements);
+    final self = this;
+    if (self is NonEmptySet<T> && self._hasExactElementType(T)) {
+      return self;
+    }
+    final elements = Set<T>.of(this);
+    return elements.isEmpty ? null : NonEmptySet._wrap(elements);
   }
 
   /// Returns these elements as an [Option] of [NonEmptySet].
+  ///
+  /// Conversion follows [toNonEmptySetOrNull], including its reuse behavior.
   ///
   /// ```dart
   /// [1, 2].toNonEmptySetOrNone(); // Option.Some({1, 2})
@@ -276,6 +293,8 @@ extension IterableToNonEmptySetExtension<T> on Iterable<T> {
       toNonEmptySetOrNull().toOption();
 
   /// Returns these elements as a [NonEmptySet].
+  ///
+  /// Conversion follows [toNonEmptySetOrNull], including its reuse behavior.
   ///
   /// Throws a [StateError] when this iterable is empty. Prefer
   /// [toNonEmptySetOrNull] or [toNonEmptySetOrNone] when emptiness is a

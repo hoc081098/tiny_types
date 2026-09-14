@@ -306,6 +306,34 @@ void main() {
         expect(list, [1]);
       });
 
+      test('Iterable conversions reuse a list with the exact element type', () {
+        final list = NonEmptyList.of(1, const [2]);
+        final Iterable<int> source = list;
+
+        expect(
+          identical(source.toNonEmptyListOrNull(), list),
+          isTrue,
+        );
+        expect(
+          identical(source.toNonEmptyListOrNone().getOrNull(), list),
+          isTrue,
+        );
+        expect(
+          identical(source.toNonEmptyListOrThrow(), list),
+          isTrue,
+        );
+      });
+
+      test('Iterable conversion copies a covariantly widened list', () {
+        final integers = NonEmptyList<int>.of(1);
+        final Iterable<num> source = integers;
+        final result = source.toNonEmptyListOrNull()!;
+
+        expect(identical(result, integers), isFalse);
+        expect(result.plus(1.5), [1, 1.5]);
+        expect(result.toList()..add(2.5), [1, 2.5]);
+      });
+
       test('toNonEmptyListOrNone selects some or none', () {
         expect(
           [1, 2].toNonEmptyListOrNone().getOrNull(),

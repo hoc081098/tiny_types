@@ -25,7 +25,15 @@ part of 'non_empty_iterable.dart';
 /// ```
 @immutable
 final class NonEmptyList<T> extends NonEmptyIterable<T> {
-  const NonEmptyList._(this._elements) : super._();
+  /// Wraps a list without copying it.
+  ///
+  /// The caller must keep the list non-empty and never mutate it afterward.
+  NonEmptyList._wrap(this._elements)
+      : assert(
+          _elements.isNotEmpty,
+          'NonEmptyList must have at least one element',
+        ),
+        super._();
 
   /// Creates a list containing [head] followed by [tail].
   ///
@@ -37,7 +45,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   /// final several = NonEmptyList.of(1, [2, 3]); // [1, 2, 3]
   /// ```
   factory NonEmptyList.of(T head, [Iterable<T> tail = const <Never>[]]) =>
-      NonEmptyList._([head, ...tail]);
+      NonEmptyList._wrap([head, ...tail]);
 
   // Never handed out directly, and never mutated after construction, which is
   // what makes the unmodifiable view returned by `asList` safe to share.
@@ -62,12 +70,13 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  NonEmptyList<T> plus(T element) => NonEmptyList._([..._elements, element]);
+  NonEmptyList<T> plus(T element) =>
+      NonEmptyList._wrap([..._elements, element]);
 
   @override
   @useResult
   NonEmptyList<T> plusAll(Iterable<T> elements) =>
-      NonEmptyList._([..._elements, ...elements]);
+      NonEmptyList._wrap([..._elements, ...elements]);
 
   @override
   @useResult
@@ -77,7 +86,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   NonEmptyList<T> distinctBy<K>(K Function(T element) selector) {
     final seenKeys = <K>{};
-    return NonEmptyList._([
+    return NonEmptyList._wrap([
       for (final element in _elements)
         if (seenKeys.add(selector(element))) element,
     ]);
@@ -89,7 +98,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 
   @override
   @useResult
-  NonEmptySet<T> toNonEmptySet() => NonEmptySet._(_elements.toSet());
+  NonEmptySet<T> toNonEmptySet() => NonEmptySet._wrap(_elements.toSet());
 
   // List-like.
 
@@ -133,7 +142,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   /// ```
   @useResult
   NonEmptyList<T> get reversed =>
-      NonEmptyList._(_elements.reversed.toList(growable: false));
+      NonEmptyList._wrap(_elements.reversed.toList(growable: false));
 
   @override
   @useResult
@@ -284,8 +293,9 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 extension IterableToNonEmptyListExtension<T> on Iterable<T> {
   /// Returns these elements as a [NonEmptyList], or `null` when empty.
   ///
-  /// The elements are copied, so later changes to this iterable are not
-  /// visible through the result.
+  /// An existing [NonEmptyList] with the exact element type is returned
+  /// unchanged. Other non-empty iterables are copied, so later changes to
+  /// them are not visible through the result.
   ///
   /// ```dart
   /// [1, 2].toNonEmptyListOrNull(); // [1, 2]
@@ -293,11 +303,17 @@ extension IterableToNonEmptyListExtension<T> on Iterable<T> {
   /// ```
   @useResult
   NonEmptyList<T>? toNonEmptyListOrNull() {
-    final elements = toList();
-    return elements.isEmpty ? null : NonEmptyList._(elements);
+    final self = this;
+    if (self is NonEmptyList<T> && self._hasExactElementType(T)) {
+      return self;
+    }
+    final elements = List<T>.unmodifiable(this);
+    return elements.isEmpty ? null : NonEmptyList._wrap(elements);
   }
 
   /// Returns these elements as an [Option] of [NonEmptyList].
+  ///
+  /// Conversion follows [toNonEmptyListOrNull], including its reuse behavior.
   ///
   /// ```dart
   /// [1, 2].toNonEmptyListOrNone(); // Option.Some([1, 2])
@@ -308,6 +324,8 @@ extension IterableToNonEmptyListExtension<T> on Iterable<T> {
       toNonEmptyListOrNull().toOption();
 
   /// Returns these elements as a [NonEmptyList].
+  ///
+  /// Conversion follows [toNonEmptyListOrNull], including its reuse behavior.
   ///
   /// Throws a [StateError] when this iterable is empty. Prefer
   /// [toNonEmptyListOrNull] or [toNonEmptyListOrNone] when emptiness is a

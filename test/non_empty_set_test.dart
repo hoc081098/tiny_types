@@ -241,6 +241,34 @@ void main() {
         expect(set, {1});
       });
 
+      test('Iterable conversions reuse a set with the exact element type', () {
+        final set = NonEmptySet.of(1, const [2]);
+        final Iterable<int> source = set;
+
+        expect(
+          identical(source.toNonEmptySetOrNull(), set),
+          isTrue,
+        );
+        expect(
+          identical(source.toNonEmptySetOrNone().getOrNull(), set),
+          isTrue,
+        );
+        expect(
+          identical(source.toNonEmptySetOrThrow(), set),
+          isTrue,
+        );
+      });
+
+      test('Iterable conversion copies a covariantly widened set', () {
+        final integers = NonEmptySet<int>.of(1);
+        final Iterable<num> source = integers;
+        final result = source.toNonEmptySetOrNull()!;
+
+        expect(identical(result, integers), isFalse);
+        expect(result.plus(1.5), {1, 1.5});
+        expect(result.toSet()..add(2.5), {1, 2.5});
+      });
+
       test('toNonEmptySetOrNone selects some or none', () {
         expect([1, 2].toNonEmptySetOrNone().getOrNull(), {1, 2});
         expect(<int>[].toNonEmptySetOrNone().isNone, isTrue);

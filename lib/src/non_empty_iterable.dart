@@ -58,6 +58,8 @@ part 'non_empty_set.dart';
 sealed class NonEmptyIterable<T> extends Iterable<T> {
   const NonEmptyIterable._();
 
+  bool _hasExactElementType(Type type) => T == type;
+
   //region Non-empty guarantee
 
   /// The first element of this collection.
@@ -194,7 +196,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   NonEmptyList<R> mapToNonEmptyList<R>(
     R Function(T element) toElement,
   ) =>
-      NonEmptyList._([for (final element in this) toElement(element)]);
+      NonEmptyList._wrap([for (final element in this) toElement(element)]);
 
   /// Transforms every element into a new [NonEmptySet].
   ///
@@ -209,7 +211,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   NonEmptySet<R> mapToNonEmptySet<R>(
     R Function(T element) toElement,
   ) =>
-      NonEmptySet._(<R>{
+      NonEmptySet._wrap(<R>{
         for (final element in this) toElement(element),
       });
 
@@ -229,7 +231,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   NonEmptyList<R> mapIndexedToNonEmptyList<R>(
     R Function(int index, T element) toElement,
   ) =>
-      NonEmptyList._([
+      NonEmptyList._wrap([
         for (final (index, element) in indexed) toElement(index, element),
       ]);
 
@@ -248,7 +250,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   NonEmptySet<R> mapIndexedToNonEmptySet<R>(
     R Function(int index, T element) toElement,
   ) =>
-      NonEmptySet._(<R>{
+      NonEmptySet._wrap(<R>{
         for (final (index, element) in indexed) toElement(index, element),
       });
 
@@ -269,7 +271,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   NonEmptyList<R> flatMapToNonEmptyList<R>(
     NonEmptyIterable<R> Function(T element) toElements,
   ) =>
-      NonEmptyList._([
+      NonEmptyList._wrap([
         for (final element in this) ...toElements(element),
       ]);
 
@@ -290,7 +292,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   NonEmptySet<R> flatMapToNonEmptySet<R>(
     NonEmptyIterable<R> Function(T element) toElements,
   ) =>
-      NonEmptySet._(<R>{
+      NonEmptySet._wrap(<R>{
         for (final element in this) ...toElements(element),
       });
 
@@ -332,7 +334,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
       }
       combined.add(combine(element, otherIterator.current));
     }
-    return NonEmptyList._(combined);
+    return NonEmptyList._wrap(combined);
   }
 
 //endregion
@@ -376,6 +378,6 @@ extension UnzipNonEmptyIterableExtension<A, B> on NonEmptyIterable<(A, B)> {
       first.add(element.$1);
       second.add(element.$2);
     }
-    return (NonEmptyList._(first), NonEmptyList._(second));
+    return (NonEmptyList._wrap(first), NonEmptyList._wrap(second));
   }
 }
