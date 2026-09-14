@@ -105,14 +105,23 @@ void main() {
     });
 
     group('list views', () {
-      test('tail returns an unmodifiable view', () {
-        final list = NonEmptyList.of(1, const [2]);
-        final view = list.tail;
+      test('tail returns an iterable that may be empty', () {
+        final list = NonEmptyList.of(1, const [2, 3]);
+        final tail = list.tail;
 
-        expect(view, [2]);
-        expect(() => view.add(3), throwsUnsupportedError);
-        expect(() => view[0] = 3, throwsUnsupportedError);
-        expect(view.sort, throwsUnsupportedError);
+        expect(tail, [2, 3]);
+        expect(tail, isNot(isA<List<int>>()));
+        expect(NonEmptyList.of(1).tail, isEmpty);
+      });
+
+      test('reversed returns an iterable in reverse order', () {
+        final result = NonEmptyList.of(1, const [2, 3]).reversed;
+
+        expect(result, [3, 2, 1]);
+        expect(result, isNot(isA<List<int>>()));
+        expect(result, isNot(isA<NonEmptyList<int>>()));
+
+        expect(NonEmptyList.of(1).reversed, [1]);
       });
 
       test('asList returns an unmodifiable view', () {
@@ -159,13 +168,6 @@ void main() {
         // Reading `head` only compiles when the static type is non-empty.
         expect(result.head, 1);
         expect(result, [1, 2]);
-      });
-
-      test('reversed returns a non-empty list', () {
-        final result = NonEmptyList.of(1, const [2, 3]).reversed;
-
-        expect(result.head, 3);
-        expect(result, [3, 2, 1]);
       });
     });
 

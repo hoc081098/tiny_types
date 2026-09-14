@@ -67,16 +67,15 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   T get head => _elements[0];
 
-  /// The elements after [head], as an unmodifiable list.
+  /// The elements after [head], as a lazy [Iterable].
   ///
-  /// Each access creates a snapshot in linear time. The result is empty when
-  /// this list has a single element.
+  /// The result is empty when this list has a single element.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2, 3]).tail; // [2, 3]
+  /// NonEmptyList.of(1, [2, 3]).tail.toList(); // [2, 3]
   /// ```
   @useResult
-  List<T> get tail => List<T>.unmodifiable(_elements.skip(1));
+  Iterable<T> get tail => _elements.skip(1);
 
   @override
   @useResult
@@ -148,16 +147,16 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   @useResult
   NonEmptyList<T> operator +(Iterable<T> other) => plusAll(other);
 
-  /// The elements of this list in reverse order, as a [NonEmptyList].
+  /// The elements of this list in reverse order, as a lazy [Iterable].
   ///
-  /// Like [List.reversed], this does not change the original list.
+  /// Like [List.reversed], this does not change the original list. The result
+  /// is non-empty, though its return type does not encode that guarantee.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2]).reversed; // [2, 1]
+  /// NonEmptyList.of(1, [2]).reversed.toList(); // [2, 1]
   /// ```
   @useResult
-  NonEmptyList<T> get reversed =>
-      NonEmptyList._wrap(_elements.reversed.toList(growable: false));
+  Iterable<T> get reversed => _elements.reversed;
 
   @override
   @useResult
