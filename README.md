@@ -9,15 +9,17 @@ Dart applications without requiring a full functional programming library.
   **at least one element**.
 - `NonEmptySet<T>` keeps **unique elements in first-occurrence order** while
   guaranteeing **at least one element**.
+- `NonEmptyMap<K, V>` keeps **key-value pairs in insertion order** while
+  guaranteeing **at least one entry**.
 
-## Installation
+## 1. Installation
 
 ```yaml
 dependencies:
   tiny_types: ^1.0.0
 ```
 
-## Option
+## 2. Option
 
 Use `Option<T>` when absence is part of the API instead of passing `null`
 through every step.
@@ -35,7 +37,7 @@ displayName(null); // Guest
 
 `fold` handles both `Some` and `None` when each case needs different behavior.
 
-## Unit
+## 3. Unit
 
 Use `Unit` when a successful result has no payload but must remain a value,
 for example in `Option<Unit>` or `Future<Unit>`. Use `void` when callers should
@@ -45,41 +47,68 @@ simply discard the result.
 final Option<Unit> saved = Option.some(Unit.value);
 ```
 
-## Non-empty collections
+## 4. Non-empty collections
 
-`NonEmptyList` and `NonEmptySet` guarantee at least one element. Their shared
-sealed base, `NonEmptyIterable<T>`, lets an API accept either kind. `head` and
-`reduce` cannot fail due to an empty collection.
+### 4.1. Choose a collection
+
+| Type | Guarantee and iteration |
+| --- | --- |
+| `NonEmptyList<T>` | Non-empty; keeps order and duplicates. |
+| `NonEmptySet<T>` | Non-empty; unique values in first-occurrence order. |
+| `NonEmptyMap<K, V>` | Non-empty; keeps key insertion order. |
+
+`NonEmptyList` and `NonEmptySet` share the sealed
+`NonEmptyIterable<T>` base because both are `Iterable`s. `NonEmptyMap` remains
+separate, like Dart's `Map`, and exposes its keys, values, and entries
+explicitly.
 
 ```dart
-final cart = NonEmptyList.of('coffee', ['tea', 'coffee']);
+final cart = NonEmptyList.of('coffee', tail: ['tea', 'coffee']);
 final products = cart.toNonEmptySet(); // {coffee, tea}
+final prices = NonEmptyMap.of(('coffee', 4.50), tail: {'tea': 3.00});
 ```
 
-For an existing `Iterable` that might be empty, use
-`toNonEmptyListOrNull()`, `toNonEmptyListOrNone()`, or
-`toNonEmptyListOrThrow()`. The matching `toNonEmptySetOrNull()`,
-`toNonEmptySetOrNone()`, and `toNonEmptySetOrThrow()` conversions deduplicate
-elements.
+### 4.2. Convert possibly empty inputs
 
-### Read-only by design
+Each collection has `OrNull`, `OrNone`, and `OrThrow` conversions:
 
-Both types are `Iterable`s, not `List`s or `Set`s: their mutable members are
-not available. `plus` and `plusAll` return new non-empty collections.
-`NonEmptyList` also provides indexing and list searches; `NonEmptySet`
-provides `containsAll`, `lookup`, and a non-empty `union`.
-`NonEmptyList` equality considers order; `NonEmptySet` equality does not.
+- `Iterable.toNonEmptyListOr...()` preserves order and duplicates.
+- `Iterable.toNonEmptySetOr...()` keeps the first occurrence of each value.
+- `Map.toNonEmptyMapOr...()` copies entries into an insertion-ordered map.
 
-Use `asList()` or `asSet()` for an unmodifiable view when another API requires
-a `List` or `Set`. Standard `toList()` and `toSet()` create modifiable copies.
-Operations that may become empty, such as `where` or set difference, return
-plain Dart collection types.
+Use `OrNull` or `OrNone` when emptiness is expected. Use `OrThrow` when an
+empty input indicates invalid program state.
 
-### Lazy or guaranteed non-empty
+### 4.3. Read-only by design
 
-Standard `Iterable` transformations (`map`, `where`, `expand`) stay lazy and
-return `Iterable`. Choose an eager `ToNonEmptyList` or `ToNonEmptySet` method
-when the result must retain the non-empty guarantee:
+The types do not implement `List`, `Set`, or `Map`, whose interfaces include
+mutating members. `plus` and `plusAll` return new non-empty collections
+without changing the originals.
+
+All three expose a `head` that cannot fail due to an empty collection and a
+lazy `tail` containing the remaining elements or entries. The `tail` may be
+empty. For a `NonEmptyMap`, `head` and `tail` contain `MapEntry` values.
+
+- `NonEmptyList` provides indexing and list searches.
+- `NonEmptySet` provides `containsAll`, `lookup`, and non-empty `union`.
+- `NonEmptyMap` provides key and value lookup plus lazy entry views. When
+  values may be `null`, use `containsKey()` to distinguish a missing key.
+
+Use `asList()`, `asSet()`, or `asMap()` for an unmodifiable view when another
+interface requires the plain Dart type. Use `toList()`, `toSet()`, or
+`toMap()` for a modifiable copy. Operations that may become empty return plain
+Dart collection types.
+
+Equality follows each collection's meaning: list equality considers order;
+set and map equality do not. Plain Dart collections are not equal to their
+non-empty counterparts.
+
+### 4.4. Lazy and guaranteed transformations
+
+For `NonEmptyList` and `NonEmptySet`, standard `Iterable` transformations
+such as `map`, `where`, and `expand` stay lazy and return `Iterable`. Choose an
+eager `ToNonEmptyList` or `ToNonEmptySet` method when the result must retain
+the non-empty guarantee:
 
 ```dart
 final labels = cart.mapIndexedToNonEmptyList(
@@ -96,7 +125,10 @@ The eager variants are `mapToNonEmptyList`, `mapToNonEmptySet`,
 return `NonEmptyIterable`s. List variants preserve duplicates; set variants
 deduplicate. `distinct`, `distinctBy`, and `zip` also keep the result non-empty.
 
-### Widening the element type
+`NonEmptyMap.map` is eager and returns another `NonEmptyMap`. If transformed
+keys are equal, the last value wins without moving the key's first position.
+
+### 4.5. Widen runtime types
 
 Dart retains generic types at runtime. Viewing a `NonEmptyList<int>` as
 `NonEmptyIterable<num>` does not let its backing list accept a `double` via
@@ -109,12 +141,13 @@ final numbers = widened.castToNonEmptyList<num>().plus(1.5);
 ```
 
 Use `castToNonEmptySet<R>()` for a set. Both conversions check existing
-elements eagerly and throw a `TypeError` if a cast fails.
+elements eagerly and throw a `TypeError` if a cast fails. For maps, use
+`castToNonEmptyMap<RK, RV>()` before adding wider key or value types.
 
 See the [runnable checkout example](example/tiny_types_example.dart) for all
-four types together.
+five types together.
 
-## License
+## 5. License
 
 ```
 MIT License

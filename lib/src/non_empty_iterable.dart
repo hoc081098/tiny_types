@@ -67,10 +67,22 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// Unlike [Iterable.first], this never throws.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2, 3]).head; // 1
+  /// NonEmptyList.of(1, tail: [2, 3]).head; // 1
   /// ```
   @useResult
   T get head;
+
+  /// The elements after [head], in iteration order.
+  ///
+  /// The result is a lazy [Iterable] and is empty when this collection has a
+  /// single element.
+  ///
+  /// ```dart
+  /// NonEmptyList.of(1, tail: [2, 3]).tail.toList(); // [2, 3]
+  /// NonEmptySet.of(1, tail: [2, 3]).tail.toList(); // [2, 3]
+  /// ```
+  @useResult
+  Iterable<T> get tail;
 
   @override
   @nonVirtual
@@ -132,9 +144,9 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// occurrence of each element is kept, in iteration order.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2, 1]).distinct(); // [1, 2]
+  /// NonEmptyList.of(1, tail: [2, 1]).distinct(); // [1, 2]
   ///
-  /// final nes = NonEmptySet.of(1, [2, 3]);
+  /// final nes = NonEmptySet.of(1, tail: [2, 3]);
   /// nes.distinct(); // {1, 2, 3}
   /// identical(nes, nes.distinct()); // true
   /// ```
@@ -147,10 +159,10 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// called exactly once per element, in iteration order.
   ///
   /// ```dart
-  /// NonEmptyList.of('one', ['three', 'two'])
+  /// NonEmptyList.of('one', tail: ['three', 'two'])
   ///     .distinctBy((word) => word.length); // ['one', 'three']
   ///
-  /// final nes = NonEmptySet.of(-1, [-2, -3, 1, 2, 3]);
+  /// final nes = NonEmptySet.of(-1, tail: [-2, -3, 1, 2, 3]);
   /// // {-1, -2, -3, 1, 2, 3}
   /// nes.distinctBy((n) => n.abs()); // {-1, -2, -3}
   /// ```
@@ -168,7 +180,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// Otherwise, eagerly materializes a new list in iteration order.
   ///
   /// ```dart
-  /// NonEmptySet.of(1, [2]).toNonEmptyList(); // [1, 2]
+  /// NonEmptySet.of(1, tail: [2]).toNonEmptyList(); // [1, 2]
   /// ```
   @useResult
   NonEmptyList<T> toNonEmptyList();
@@ -179,7 +191,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// Otherwise, eagerly materializes a new set in first-occurrence order.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2, 1]).toNonEmptySet(); // {1, 2}
+  /// NonEmptyList.of(1, tail: [2, 1]).toNonEmptySet(); // {1, 2}
   /// ```
   @useResult
   NonEmptySet<T> toNonEmptySet();
@@ -236,7 +248,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// The result is computed eagerly. Use [map] for a lazy [Iterable] instead.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2])
+  /// NonEmptyList.of(1, tail: [2])
   ///     .mapToNonEmptyList((value) => value * 2); // [2, 4]
   /// ```
   @useResult
@@ -252,7 +264,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// collapsed. Use [map] for a lazy [Iterable] that preserves duplicates.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2])
+  /// NonEmptyList.of(1, tail: [2])
   ///     .mapToNonEmptySet((value) => value.isEven); // {false, true}
   /// ```
   @useResult
@@ -271,7 +283,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// `package:collection`'s lazy `mapIndexed` extension.
   ///
   /// ```dart
-  /// NonEmptyList.of('a', ['b'])
+  /// NonEmptyList.of('a', tail: ['b'])
   ///     .mapIndexedToNonEmptyList(
   ///       (index, letter) => '$index$letter',
   ///     ); // ['0a', '1b']
@@ -291,7 +303,7 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// collapsed.
   ///
   /// ```dart
-  /// NonEmptyList.of('a', ['b'])
+  /// NonEmptyList.of('a', tail: ['b'])
   ///     .mapIndexedToNonEmptySet(
   ///       (index, letter) => '$index$letter',
   ///     ); // {'0a', '1b'}
@@ -312,9 +324,9 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// the concatenation is non-empty.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2])
+  /// NonEmptyList.of(1, tail: [2])
   ///     .flatMapToNonEmptyList(
-  ///       (value) => NonEmptyList.of(value, [-value]),
+  ///       (value) => NonEmptyList.of(value, tail: [-value]),
   ///     );
   /// // [1, -1, 2, -2]
   /// ```
@@ -334,9 +346,9 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// the result is non-empty; equal elements are collapsed.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2])
+  /// NonEmptyList.of(1, tail: [2])
   ///     .flatMapToNonEmptySet(
-  ///       (value) => NonEmptyList.of(value, [-value]),
+  ///       (value) => NonEmptyList.of(value, tail: [-value]),
   ///     );
   /// // {1, -1, 2, -2}
   /// ```
@@ -354,8 +366,8 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// The result is as long as the shorter of the two collections.
   ///
   /// ```dart
-  /// final pairs = NonEmptyList.of(1, [2])
-  ///     .zip(NonEmptyList.of('a', ['b', 'c']));
+  /// final pairs = NonEmptyList.of(1, tail: [2])
+  ///     .zip(NonEmptyList.of('a', tail: ['b', 'c']));
   /// // [(1, 'a'), (2, 'b')]
   /// ```
   @useResult
@@ -369,8 +381,8 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   /// once. The result is as long as the shorter of the two collections.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2]).zipWith(
-  ///   NonEmptyList.of(10, [20, 30]),
+  /// NonEmptyList.of(1, tail: [2]).zipWith(
+  ///   NonEmptyList.of(10, tail: [20, 30]),
   ///   (left, right) => left + right,
   /// );
   /// // [11, 22]
@@ -404,10 +416,10 @@ extension FlattenNonEmptyIterableExtension<T>
   ///
   /// ```dart
   /// final nested = NonEmptyList.of(
-  ///   NonEmptyList.of(1, [2]),
-  ///   [
+  ///   NonEmptyList.of(1, tail: [2]),
+  ///   tail: [
   ///     NonEmptyList.of(3),
-  ///     NonEmptyList.of(4, [5]),
+  ///     NonEmptyList.of(4, tail: [5]),
   ///   ],
   /// );
   /// nested.flatten(); // [1, 2, 3, 4, 5]
@@ -422,7 +434,7 @@ extension UnzipNonEmptyIterableExtension<A, B> on NonEmptyIterable<(A, B)> {
   ///
   /// ```dart
   /// final (numbers, letters) =
-  ///     NonEmptyList.of((1, 'a'), [(2, 'b')]).unzip();
+  ///     NonEmptyList.of((1, 'a'), tail: [(2, 'b')]).unzip();
   /// // ([1, 2], ['a', 'b'])
   /// ```
   @useResult
