@@ -24,11 +24,11 @@ import 'option.dart';
 /// one; [toMap] creates a modifiable copy. [plus], [plusAll], and [map] create
 /// new non-empty maps without changing this one.
 ///
-/// [head] is the first entry in iteration order. [keys], [values], and
-/// [entries] are lazy views; their types do not encode the non-empty guarantee.
-/// Two [NonEmptyMap]s are equal when they contain equal key-value pairs,
-/// regardless of iteration order. A plain [Map] is not equal to a
-/// [NonEmptyMap].
+/// [head] is the first entry in iteration order, and [tail] lazily exposes the
+/// remaining entries. [keys], [values], and [entries] are also lazy views;
+/// their types do not encode the non-empty guarantee. Two [NonEmptyMap]s are
+/// equal when they contain equal key-value pairs, regardless of iteration
+/// order. A plain [Map] is not equal to a [NonEmptyMap].
 @immutable
 final class NonEmptyMap<K, V> {
   NonEmptyMap._wrap(this._map)
@@ -68,6 +68,12 @@ final class NonEmptyMap<K, V> {
   /// nullable.
   @useResult
   MapEntry<K, V> get head => _map.entries.first;
+
+  /// The entries after [head], in key insertion order.
+  ///
+  /// This is a lazy [Iterable] and is empty when this map has one entry.
+  @useResult
+  Iterable<MapEntry<K, V>> get tail => _map.entries.skip(1);
 
   /// The number of entries, always at least one.
   @useResult
@@ -111,14 +117,15 @@ final class NonEmptyMap<K, V> {
   /// Invokes [action] once for each entry, in iteration order.
   void forEach(void Function(K key, V value) action) => _map.forEach(action);
 
-  /// Returns a new map with [key] associated with [value].
+  /// Returns a new map containing [entry].
   ///
   /// An existing key keeps its position and receives the new value. A new key
-  /// is appended. A covariantly widened receiver may reject [key] or [value]
-  /// at runtime; use [castToNonEmptyMap] to copy it with wider runtime types.
+  /// is appended. A covariantly widened receiver may reject either field of
+  /// [entry] at runtime; use [castToNonEmptyMap] to copy it with wider runtime
+  /// types.
   @useResult
-  NonEmptyMap<K, V> plus(K key, V value) =>
-      NonEmptyMap._wrap(<K, V>{..._map, key: value});
+  NonEmptyMap<K, V> plus((K, V) entry) =>
+      NonEmptyMap._wrap(<K, V>{..._map, entry.$1: entry.$2});
 
   /// Returns a new map with all entries from [other] added in iteration order.
   ///
@@ -146,6 +153,16 @@ final class NonEmptyMap<K, V> {
     return NonEmptyMap._wrap(mapped);
   }
 
+  /// Copies the entries into a [NonEmptyMap] with key and value types
+  /// [RK] and [RV].
+  ///
+  /// Every key and value is checked eagerly. A failed cast throws a
+  /// [TypeError]. Unlike [Map.cast], the result is an independent copy with
+  /// the requested runtime types.
+  @useResult
+  NonEmptyMap<RK, RV> castToNonEmptyMap<RK, RV>() =>
+      NonEmptyMap._wrap(Map<RK, RV>.from(_map));
+
   /// Returns an unmodifiable [Map] view of these entries.
   ///
   /// The view is created in constant time and remains unchanged because this
@@ -157,16 +174,6 @@ final class NonEmptyMap<K, V> {
   /// Returns a modifiable [Map] copy of these entries.
   @useResult
   Map<K, V> toMap() => Map<K, V>.of(_map);
-
-  /// Copies the entries into a [NonEmptyMap] with key and value types
-  /// [RK] and [RV].
-  ///
-  /// Every key and value is checked eagerly. A failed cast throws a
-  /// [TypeError]. Unlike [Map.cast], the result is an independent copy with
-  /// the requested runtime types.
-  @useResult
-  NonEmptyMap<RK, RV> castToNonEmptyMap<RK, RV>() =>
-      NonEmptyMap._wrap(Map<RK, RV>.from(_map));
 
   /// Whether [other] is a [NonEmptyMap] containing the same key-value pairs.
   ///

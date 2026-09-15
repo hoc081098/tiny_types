@@ -9,6 +9,8 @@ Dart applications without requiring a full functional programming library.
   **at least one element**.
 - `NonEmptySet<T>` keeps **unique elements in first-occurrence order** while
   guaranteeing **at least one element**.
+- `NonEmptyMap<K, V>` keeps **key-value pairs in insertion order** while
+  guaranteeing **at least one entry**.
 
 ## Installation
 
@@ -52,7 +54,7 @@ sealed base, `NonEmptyIterable<T>`, lets an API accept either kind. `head` and
 `reduce` cannot fail due to an empty collection.
 
 ```dart
-final cart = NonEmptyList.of('coffee', ['tea', 'coffee']);
+final cart = NonEmptyList.of('coffee', tail: ['tea', 'coffee']);
 final products = cart.toNonEmptySet(); // {coffee, tea}
 ```
 
@@ -111,8 +113,32 @@ final numbers = widened.castToNonEmptyList<num>().plus(1.5);
 Use `castToNonEmptySet<R>()` for a set. Both conversions check existing
 elements eagerly and throw a `TypeError` if a cast fails.
 
+## NonEmptyMap
+
+Use `NonEmptyMap<K, V>` when at least one key-value pair is required. Supply
+the first pair explicitly; later entries with the same key replace its value
+without moving the key.
+
+```dart
+final prices = NonEmptyMap.of(('coffee', 4.50), tail: {'tea': 3.00});
+final updated = prices.plus(('coffee', 5.00));
+
+prices['coffee']; // 4.5 (unchanged)
+updated.head; // MapEntry(coffee: 5.0)
+```
+
+It is not a `Map` or a `NonEmptyIterable`. `plus`, `plusAll`, and the eager
+`map` return new non-empty maps; `asMap()` gives an unmodifiable `Map` view,
+and `toMap()` gives a modifiable copy. `head` is always available; `tail`
+lazily exposes the remaining entries and may be empty. For a possibly empty
+`Map`, use `toNonEmptyMapOrNull()`, `toNonEmptyMapOrNone()`, or
+`toNonEmptyMapOrThrow()`; each copies the input. If values may be `null`, use
+`containsKey()` to distinguish an absent key from a present `null` value.
+Use `castToNonEmptyMap<RK, RV>()` to make an eagerly checked copy before
+adding wider key or value types to a covariantly widened receiver.
+
 See the [runnable checkout example](example/tiny_types_example.dart) for all
-four types together.
+five types together.
 
 ## License
 

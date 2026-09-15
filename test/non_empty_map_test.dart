@@ -40,7 +40,7 @@ void main() {
         final map = NonEmptyMap.of((2, 20), tail: const {1: 10});
         final maps = <NonEmptyMap<int, int>>[
           map,
-          map.plus(2, 200),
+          map.plus((2, 200)),
           map.plusAll(const {2: 200}),
           map.map(MapEntry.new),
           map.castToNonEmptyMap<int, int>(),
@@ -87,6 +87,16 @@ void main() {
         expect(map.entries.map((entry) => (entry.key, entry.value)), seen);
       });
 
+      test('tail lazily exposes the entries after head', () {
+        final map = NonEmptyMap.of(('a', 1), tail: const {'b': 2, 'c': 3});
+
+        expect(
+          map.tail.map((entry) => (entry.key, entry.value)),
+          [('b', 2), ('c', 3)],
+        );
+        expect(NonEmptyMap.of(('a', 1)).tail, isEmpty);
+      });
+
       test('asMap returns an unmodifiable view', () {
         final map = NonEmptyMap.of(('a', 1), tail: const {'b': 2});
         final view = map.asMap();
@@ -115,7 +125,7 @@ void main() {
     group('non-empty transformations', () {
       test('plus appends a new key without changing the original', () {
         final map = NonEmptyMap.of(('a', 1));
-        final result = map.plus('b', 2);
+        final result = map.plus(('b', 2));
 
         expect(result.keys, ['a', 'b']);
         expect(result.asMap(), {'a': 1, 'b': 2});
@@ -124,7 +134,7 @@ void main() {
 
       test('plus replaces a value without moving the key', () {
         final map = NonEmptyMap.of(('a', 1), tail: const {'b': 2});
-        final result = map.plus('a', 3);
+        final result = map.plus(('a', 3));
 
         expect(result.keys, ['a', 'b']);
         expect(result.asMap(), {'a': 3, 'b': 2});
@@ -169,7 +179,7 @@ void main() {
       test('copies widened keys and values before adding new entries', () {
         final integers = NonEmptyMap<int, int>.of((1, 2));
         final widened = integers.castToNonEmptyMap<num, num>();
-        final result = widened.plus(1.5, 2.5);
+        final result = widened.plus((1.5, 2.5));
 
         expect(result.asMap(), {1: 2, 1.5: 2.5});
         expect(integers.asMap(), {1: 2});
@@ -191,12 +201,12 @@ void main() {
       test('widened receivers reject incompatible additions until copied', () {
         final NonEmptyMap<num, num> widened = NonEmptyMap<int, int>.of((1, 2));
 
-        expect(() => widened.plus(1.5, 2.5), throwsA(isA<TypeError>()));
+        expect(() => widened.plus((1.5, 2.5)), throwsA(isA<TypeError>()));
         expect(
           () => widened.plusAll(<num, num>{1.5: 2.5}),
           throwsA(isA<TypeError>()),
         );
-        expect(widened.castToNonEmptyMap<num, num>().plus(1.5, 2.5).asMap(), {
+        expect(widened.castToNonEmptyMap<num, num>().plus((1.5, 2.5)).asMap(), {
           1: 2,
           1.5: 2.5,
         });
