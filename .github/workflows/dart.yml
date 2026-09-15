@@ -48,11 +48,11 @@ jobs:
 
       - name: Run all tests
         if: ${{ matrix.sdk != 'stable' }}
-        run: dart test --chain-stack-traces
+        run: dart --enable-asserts test --chain-stack-traces
 
       - name: Run all tests and collect coverage
         if: ${{ matrix.sdk == 'stable' }}
-        run: dart test --coverage=./coverage --chain-stack-traces
+        run: dart --enable-asserts test --coverage=./coverage --chain-stack-traces
 
       - name: Activate coverage
         if: ${{ matrix.sdk == 'stable' }}
