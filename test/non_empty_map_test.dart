@@ -285,13 +285,20 @@ void main() {
         expect(integers.hashCode, widened.hashCode);
       });
 
-      test('distinguishes missing keys from present null values', () {
-        final first = NonEmptyMap<String, int?>.of(('a', null));
-        final same = NonEmptyMap<String, int?>.of(('a', null));
-        final different = NonEmptyMap<String, int?>.of(('b', null));
+      test('distinguishes missing keys with null values despite collisions',
+          () {
+        const firstKey = _CollidingKey('first');
+        const differentKey = _CollidingKey('different');
+
+        final first = NonEmptyMap<_CollidingKey, int?>.of((firstKey, null));
+        final same = NonEmptyMap<_CollidingKey, int?>.of((firstKey, null));
+        final different =
+            NonEmptyMap<_CollidingKey, int?>.of((differentKey, null));
 
         expect(first == same, isTrue);
         expect(first.hashCode, same.hashCode);
+
+        expect(first.hashCode, different.hashCode);
         expect(first == different, isFalse);
       });
 
@@ -334,4 +341,18 @@ final class _EqualKey {
 
   @override
   int get hashCode => value.hashCode;
+}
+
+@immutable
+final class _CollidingKey {
+  const _CollidingKey(this.value);
+
+  final String value;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _CollidingKey && value == other.value;
+
+  @override
+  int get hashCode => 0;
 }
