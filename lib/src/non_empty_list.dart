@@ -11,7 +11,7 @@ part of 'non_empty_iterable.dart';
 /// `toNonEmptyListOrThrow()`.
 ///
 /// ```dart
-/// final recipients = NonEmptyList.of('ada@example.com', [
+/// final recipients = NonEmptyList.of('ada@example.com', tail: [
 ///   'grace@example.com',
 /// ]);
 /// recipients.head; // 'ada@example.com'
@@ -52,9 +52,12 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   ///
   /// ```dart
   /// final single = NonEmptyList.of(1); // [1]
-  /// final several = NonEmptyList.of(1, [2, 3]); // [1, 2, 3]
+  /// final several = NonEmptyList.of(1, tail: [2, 3]); // [1, 2, 3]
   /// ```
-  factory NonEmptyList.of(T head, [Iterable<T> tail = const <Never>[]]) =>
+  factory NonEmptyList.of(
+    T head, {
+    Iterable<T> tail = const <Never>[],
+  }) =>
       NonEmptyList._wrap([head, ...tail]);
 
   // Never handed out directly, and never mutated after construction, which is
@@ -72,7 +75,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   /// The result is empty when this list has a single element.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2, 3]).tail.toList(); // [2, 3]
+  /// NonEmptyList.of(1, tail: [2, 3]).tail.toList(); // [2, 3]
   /// ```
   @useResult
   Iterable<T> get tail => _elements.skip(1);
@@ -131,7 +134,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   /// outside `0` until [length] minus one.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2])[1]; // 2
+  /// NonEmptyList.of(1, tail: [2])[1]; // 2
   /// ```
   @useResult
   T operator [](int index) => _elements[index];
@@ -153,7 +156,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   /// is non-empty, though its return type does not encode that guarantee.
   ///
   /// ```dart
-  /// NonEmptyList.of(1, [2]).reversed.toList(); // [2, 1]
+  /// NonEmptyList.of(1, tail: [2]).reversed.toList(); // [2, 1]
   /// ```
   @useResult
   Iterable<T> get reversed => _elements.reversed;

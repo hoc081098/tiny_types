@@ -12,7 +12,7 @@ part of 'non_empty_iterable.dart';
 /// `toNonEmptySetOrThrow()`.
 ///
 /// ```dart
-/// final tags = NonEmptySet.of('dart', ['dart', 'types']);
+/// final tags = NonEmptySet.of('dart', tail: ['dart', 'types']);
 /// tags.toList(); // ['dart', 'types']
 /// ```
 ///
@@ -54,9 +54,12 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   ///
   /// ```dart
   /// final single = NonEmptySet.of(1); // {1}
-  /// final several = NonEmptySet.of(1, [2, 1]); // {1, 2}
+  /// final several = NonEmptySet.of(1, tail: [2, 1]); // {1, 2}
   /// ```
-  factory NonEmptySet.of(T head, [Iterable<T> tail = const <Never>[]]) =>
+  factory NonEmptySet.of(
+    T head, {
+    Iterable<T> tail = const <Never>[],
+  }) =>
       NonEmptySet._wrap(<T>{head, ...tail});
 
   // Never handed out directly, and never mutated after construction, which is
@@ -109,7 +112,7 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   /// [Iterable.toSet] for a modifiable copy.
   ///
   /// ```dart
-  /// final tags = NonEmptySet.of('dart', ['types']);
+  /// final tags = NonEmptySet.of('dart', tail: ['types']);
   ///
   /// tags.asSet().intersection({'dart'}); // {dart}
   /// tags.asSet().difference({'dart'}); // {types}
@@ -133,7 +136,8 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   /// [castToNonEmptySet] to copy it with the intended runtime element type.
   ///
   /// ```dart
-  /// NonEmptySet.of(2, [1]).union(NonEmptySet.of(1, [3])); // {2, 1, 3}
+  /// NonEmptySet.of(2, tail: [1])
+  ///     .union(NonEmptySet.of(1, tail: [3])); // {2, 1, 3}
   /// ```
   @useResult
   NonEmptySet<T> union(NonEmptySet<T> other) =>
@@ -143,8 +147,8 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   /// [Set.lookup].
   ///
   /// ```dart
-  /// NonEmptySet.of(1, [2]).lookup(2); // 2
-  /// NonEmptySet.of(1, [2]).lookup(3); // null
+  /// NonEmptySet.of(1, tail: [2]).lookup(2); // 2
+  /// NonEmptySet.of(1, tail: [2]).lookup(3); // null
   /// ```
   @useResult
   T? lookup(Object? element) => _elements.lookup(element);

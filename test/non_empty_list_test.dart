@@ -14,7 +14,7 @@ void main() {
       });
 
       test('of keeps the order and duplicates of the tail', () {
-        final list = NonEmptyList.of(1, const [2, 1]);
+        final list = NonEmptyList.of(1, tail: const [2, 1]);
 
         expect(list, [1, 2, 1]);
         expect(list.head, 1);
@@ -23,7 +23,7 @@ void main() {
 
       test('of copies the tail', () {
         final tail = [2];
-        final list = NonEmptyList.of(1, tail);
+        final list = NonEmptyList.of(1, tail: tail);
 
         tail.add(3);
 
@@ -40,7 +40,7 @@ void main() {
       });
 
       test('head, first, last, and reduce are total', () {
-        final list = NonEmptyList.of(1, const [2, 3]);
+        final list = NonEmptyList.of(1, tail: const [2, 3]);
 
         expect(list.head, 1);
         expect(list.first, 1);
@@ -51,7 +51,7 @@ void main() {
       test('is usable as a plain iterable', () {
         Iterable<int> asIterable(Iterable<int> values) => values;
 
-        final list = NonEmptyList.of(1, const [2]);
+        final list = NonEmptyList.of(1, tail: const [2]);
 
         expect(asIterable(list), [1, 2]);
         expect([...list], [1, 2]);
@@ -65,7 +65,7 @@ void main() {
       });
 
       test('reads elements by index', () {
-        final list = NonEmptyList.of(1, const [2]);
+        final list = NonEmptyList.of(1, tail: const [2]);
 
         expect(list[0], 1);
         expect(list[1], 2);
@@ -75,7 +75,7 @@ void main() {
     });
 
     group('list-like searches', () {
-      final list = NonEmptyList.of(1, const [2, 1, 3]);
+      final list = NonEmptyList.of(1, tail: const [2, 1, 3]);
 
       test('indexOf searches forward from start', () {
         expect(list.indexOf(1), 0);
@@ -106,7 +106,7 @@ void main() {
 
     group('list views', () {
       test('tail returns an iterable that may be empty', () {
-        final list = NonEmptyList.of(1, const [2, 3]);
+        final list = NonEmptyList.of(1, tail: const [2, 3]);
         final tail = list.tail;
 
         expect(tail, [2, 3]);
@@ -115,7 +115,7 @@ void main() {
       });
 
       test('reversed returns an iterable in reverse order', () {
-        final result = NonEmptyList.of(1, const [2, 3]).reversed;
+        final result = NonEmptyList.of(1, tail: const [2, 3]).reversed;
 
         expect(result, [3, 2, 1]);
         expect(result, isNot(isA<List<int>>()));
@@ -125,7 +125,7 @@ void main() {
       });
 
       test('asList returns an unmodifiable view', () {
-        final list = NonEmptyList.of(1, const [2]);
+        final list = NonEmptyList.of(1, tail: const [2]);
         final view = list.asList();
 
         expect(view, [1, 2]);
@@ -145,7 +145,7 @@ void main() {
       });
 
       test('toSet discards duplicates', () {
-        expect(NonEmptyList.of(1, const [2, 1]).toSet(), {1, 2});
+        expect(NonEmptyList.of(1, tail: const [2, 1]).toSet(), {1, 2});
       });
     });
 
@@ -174,7 +174,7 @@ void main() {
     group('transformations', () {
       test('map keeps the lazy Iterable contract', () {
         var callCount = 0;
-        final result = NonEmptyList.of(1, const [2]).map((value) {
+        final result = NonEmptyList.of(1, tail: const [2]).map((value) {
           callCount++;
           return value * 2;
         });
@@ -188,7 +188,7 @@ void main() {
 
       test('mapToNonEmptyList transforms eagerly', () {
         var callCount = 0;
-        final result = NonEmptyList.of(1, const [2]).mapToNonEmptyList(
+        final result = NonEmptyList.of(1, tail: const [2]).mapToNonEmptyList(
           (value) {
             callCount++;
             return value * 2;
@@ -201,7 +201,7 @@ void main() {
       });
 
       test('mapToNonEmptySet collapses equal results', () {
-        final result = NonEmptyList.of(1, const [2, 3])
+        final result = NonEmptyList.of(1, tail: const [2, 3])
             .mapToNonEmptySet((value) => value.isEven);
 
         expect(result, {false, true});
@@ -210,7 +210,7 @@ void main() {
 
       test('mapIndexedToNonEmptyList exposes the iteration index', () {
         final result =
-            NonEmptyList.of('a', const ['b']).mapIndexedToNonEmptyList(
+            NonEmptyList.of('a', tail: const ['b']).mapIndexedToNonEmptyList(
           (index, letter) => '$index$letter',
         );
 
@@ -219,7 +219,7 @@ void main() {
       });
 
       test('mapIndexedToNonEmptySet collapses equal results', () {
-        final result = NonEmptyList.of('a', const ['b'])
+        final result = NonEmptyList.of('a', tail: const ['b'])
             .mapIndexedToNonEmptySet((index, letter) => letter.length);
 
         expect(result, {1});
@@ -227,8 +227,9 @@ void main() {
       });
 
       test('flatMapToNonEmptyList concatenates the results', () {
-        final result = NonEmptyList.of(1, const [2]).flatMapToNonEmptyList(
-          (value) => NonEmptyList.of(value, [-value]),
+        final result =
+            NonEmptyList.of(1, tail: const [2]).flatMapToNonEmptyList(
+          (value) => NonEmptyList.of(value, tail: [-value]),
         );
 
         expect(result, [1, -1, 2, -2]);
@@ -236,8 +237,8 @@ void main() {
       });
 
       test('flatMapToNonEmptySet collapses equal results', () {
-        final result = NonEmptyList.of(1, const [2]).flatMapToNonEmptySet(
-          (value) => NonEmptyList.of(value, [value]),
+        final result = NonEmptyList.of(1, tail: const [2]).flatMapToNonEmptySet(
+          (value) => NonEmptyList.of(value, tail: [value]),
         );
 
         expect(result, {1, 2});
@@ -245,14 +246,14 @@ void main() {
       });
 
       test('distinct keeps the first occurrence of each element', () {
-        final result = NonEmptyList.of(1, const [2, 1, 3]).distinct();
+        final result = NonEmptyList.of(1, tail: const [2, 1, 3]).distinct();
 
         expect(result, [1, 2, 3]);
         expect(result, isA<NonEmptyList<int>>());
       });
 
       test('distinctBy keeps the first occurrence of each key', () {
-        final result = NonEmptyList.of('one', const ['three', 'two'])
+        final result = NonEmptyList.of('one', tail: const ['three', 'two'])
             .distinctBy((word) => word.length);
 
         expect(result, ['one', 'three']);
@@ -261,7 +262,8 @@ void main() {
 
       test('distinctBy calls selector once per element in order', () {
         final visited = <int>[];
-        final result = NonEmptyList.of(1, const [2, 3]).distinctBy((value) {
+        final result =
+            NonEmptyList.of(1, tail: const [2, 3]).distinctBy((value) {
           visited.add(value);
           return value.isOdd;
         });
@@ -272,8 +274,8 @@ void main() {
 
       test('flatten removes one level of nesting', () {
         final nested = NonEmptyList.of(
-          NonEmptyList.of(1, const [2]),
-          [NonEmptyList.of(3)],
+          NonEmptyList.of(1, tail: const [2]),
+          tail: [NonEmptyList.of(3)],
         );
 
         expect(nested.flatten(), [1, 2, 3]);
@@ -282,27 +284,27 @@ void main() {
 
     group('combinations', () {
       test('zip pairs elements by position', () {
-        final result = NonEmptyList.of(1, const [2])
-            .zip(NonEmptyList.of('a', const ['b']));
+        final result = NonEmptyList.of(1, tail: const [2])
+            .zip(NonEmptyList.of('a', tail: const ['b']));
 
         expect(result, [(1, 'a'), (2, 'b')]);
       });
 
       test('zip stops at the shorter collection', () {
         expect(
-          NonEmptyList.of(1, const [2, 3]).zip(NonEmptyList.of('a')),
+          NonEmptyList.of(1, tail: const [2, 3]).zip(NonEmptyList.of('a')),
           [(1, 'a')],
         );
         expect(
-          NonEmptyList.of(1).zip(NonEmptyList.of('a', const ['b'])),
+          NonEmptyList.of(1).zip(NonEmptyList.of('a', tail: const ['b'])),
           [(1, 'a')],
         );
       });
 
       test('zipWith combines elements by position', () {
         var callCount = 0;
-        final result = NonEmptyList.of(1, const [2]).zipWith(
-          NonEmptyList.of(10, const [20, 30]),
+        final result = NonEmptyList.of(1, tail: const [2]).zipWith(
+          NonEmptyList.of(10, tail: const [20, 30]),
           (left, right) {
             callCount++;
             return left + right;
@@ -315,7 +317,7 @@ void main() {
 
       test('unzip splits pairs into two collections', () {
         final (numbers, letters) =
-            NonEmptyList.of((1, 'a'), const [(2, 'b')]).unzip();
+            NonEmptyList.of((1, 'a'), tail: const [(2, 'b')]).unzip();
 
         expect(numbers, [1, 2]);
         expect(letters, ['a', 'b']);
@@ -324,7 +326,7 @@ void main() {
 
     group('conversions', () {
       test('toNonEmptyList returns the same immutable list', () {
-        final list = NonEmptyList.of(1, const [2]);
+        final list = NonEmptyList.of(1, tail: const [2]);
         final result = list.toNonEmptyList();
 
         expect(result, [1, 2]);
@@ -332,7 +334,7 @@ void main() {
       });
 
       test('toNonEmptySet discards duplicates', () {
-        expect(NonEmptyList.of(1, const [2, 1]).toNonEmptySet(), {1, 2});
+        expect(NonEmptyList.of(1, tail: const [2, 1]).toNonEmptySet(), {1, 2});
       });
 
       test('toNonEmptyListOrNull selects a list or null', () {
@@ -350,7 +352,7 @@ void main() {
       });
 
       test('Iterable conversions reuse a list with the exact element type', () {
-        final list = NonEmptyList.of(1, const [2]);
+        final list = NonEmptyList.of(1, tail: const [2]);
         final Iterable<int> source = list;
 
         expect(
@@ -393,8 +395,8 @@ void main() {
 
     group('equality', () {
       test('equal elements in equal order are equal', () {
-        final list = NonEmptyList.of(1, const [2]);
-        final other = NonEmptyList.of(1, const [2]);
+        final list = NonEmptyList.of(1, tail: const [2]);
+        final other = NonEmptyList.of(1, tail: const [2]);
 
         expect(list == other, isTrue);
         expect(list.hashCode, other.hashCode);
@@ -402,8 +404,8 @@ void main() {
       });
 
       test('equal elements with different type arguments are equal', () {
-        final integers = NonEmptyList<int>.of(1, const [2]);
-        final numbers = NonEmptyList<num>.of(1, const [2]);
+        final integers = NonEmptyList<int>.of(1, tail: const [2]);
+        final numbers = NonEmptyList<num>.of(1, tail: const [2]);
 
         expect(integers == numbers, isTrue);
         expect(numbers == integers, isTrue);
@@ -412,10 +414,14 @@ void main() {
 
       test('order and length are significant', () {
         expect(
-          NonEmptyList.of(1, const [2]) == NonEmptyList.of(2, const [1]),
+          NonEmptyList.of(1, tail: const [2]) ==
+              NonEmptyList.of(2, tail: const [1]),
           isFalse,
         );
-        expect(NonEmptyList.of(1, const [2]) == NonEmptyList.of(1), isFalse);
+        expect(
+          NonEmptyList.of(1, tail: const [2]) == NonEmptyList.of(1),
+          isFalse,
+        );
 
         final Object otherElementType = NonEmptyList.of('1');
         expect(NonEmptyList.of(1) == otherElementType, isFalse);
@@ -437,7 +443,7 @@ void main() {
       });
 
       test('toString matches the list form', () {
-        expect(NonEmptyList.of(1, const [2]).toString(), '[1, 2]');
+        expect(NonEmptyList.of(1, tail: const [2]).toString(), '[1, 2]');
       });
     });
   });

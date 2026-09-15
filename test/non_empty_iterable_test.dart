@@ -8,20 +8,20 @@ String describe(NonEmptyIterable<int> collection) =>
 void main() {
   group('NonEmptyIterable', () {
     test('abstracts over both implementations', () {
-      expect(describe(NonEmptyList.of(1, const [2])), '1 of 2');
-      expect(describe(NonEmptySet.of(1, const [2, 1])), '1 of 2');
+      expect(describe(NonEmptyList.of(1, tail: const [2])), '1 of 2');
+      expect(describe(NonEmptySet.of(1, tail: const [2, 1])), '1 of 2');
     });
 
     test('zip accepts either implementation', () {
-      final result =
-          NonEmptyList.of(1, const [2]).zip(NonEmptySet.of('a', const ['b']));
+      final result = NonEmptyList.of(1, tail: const [2])
+          .zip(NonEmptySet.of('a', tail: const ['b']));
 
       expect(result, [(1, 'a'), (2, 'b')]);
     });
 
     test('flatMapToNonEmptyList accepts either implementation', () {
-      final result = NonEmptySet.of(1, const [2]).flatMapToNonEmptyList(
-        (value) => NonEmptyList.of(value, [value]),
+      final result = NonEmptySet.of(1, tail: const [2]).flatMapToNonEmptyList(
+        (value) => NonEmptyList.of(value, tail: [value]),
       );
 
       expect(result, [1, 1, 2, 2]);
@@ -29,7 +29,7 @@ void main() {
 
     test('package:collection mapIndexed remains lazy', () {
       var callCount = 0;
-      final result = NonEmptyList.of('a', const ['b']).mapIndexed(
+      final result = NonEmptyList.of('a', tail: const ['b']).mapIndexed(
         (index, letter) {
           callCount++;
           return '$index$letter';
@@ -45,8 +45,8 @@ void main() {
 
     test('delegates standard Iterable operations', () {
       final values = <NonEmptyIterable<int>>[
-        NonEmptyList.of(1, const [2]),
-        NonEmptySet.of(1, const [2]),
+        NonEmptyList.of(1, tail: const [2]),
+        NonEmptySet.of(1, tail: const [2]),
       ];
 
       for (final value in values) {
@@ -85,15 +85,15 @@ void main() {
 
     test('flatten accepts mixed nesting', () {
       final nested = NonEmptyList<NonEmptyIterable<int>>.of(
-        NonEmptyList.of(1, const [2]),
-        [NonEmptySet.of(3)],
+        NonEmptyList.of(1, tail: const [2]),
+        tail: [NonEmptySet.of(3)],
       );
 
       expect(nested.flatten(), [1, 2, 3]);
     });
 
     test('conversions round-trip between implementations', () {
-      final list = NonEmptyList.of(1, const [2, 1]);
+      final list = NonEmptyList.of(1, tail: const [2, 1]);
 
       expect(list.toNonEmptySet().toNonEmptyList(), [1, 2]);
       expect(list.toNonEmptySet().toNonEmptySet(), {1, 2});
@@ -130,8 +130,8 @@ void main() {
     });
 
     test('cast-copy conversions preserve order and set uniqueness', () {
-      final list = NonEmptyList.of(2, const [1, 2]);
-      final set = NonEmptySet.of(2, const [1]);
+      final list = NonEmptyList.of(2, tail: const [1, 2]);
+      final set = NonEmptySet.of(2, tail: const [1]);
 
       expect(list.castToNonEmptySet<num>().toList(), [2, 1]);
       expect(set.castToNonEmptyList<num>(), [2, 1]);
@@ -141,7 +141,7 @@ void main() {
 
     test('cast-copy conversions reject incompatible elements eagerly', () {
       final NonEmptyIterable<Object> values =
-          NonEmptyList<Object>.of(1, const ['not a number']);
+          NonEmptyList<Object>.of(1, tail: const ['not a number']);
 
       expect(() => values.castToNonEmptyList<num>(), throwsA(isA<TypeError>()));
       expect(() => values.castToNonEmptySet<num>(), throwsA(isA<TypeError>()));

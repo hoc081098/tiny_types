@@ -13,7 +13,7 @@ void main() {
       });
 
       test('of discards duplicates and keeps insertion order', () {
-        final set = NonEmptySet.of(2, const [1, 2, 3]);
+        final set = NonEmptySet.of(2, tail: const [1, 2, 3]);
 
         expect(set.toList(), [2, 1, 3]);
         expect(set.head, 2);
@@ -21,7 +21,7 @@ void main() {
 
       test('of copies the tail', () {
         final tail = [2];
-        final set = NonEmptySet.of(1, tail);
+        final set = NonEmptySet.of(1, tail: tail);
 
         tail.add(3);
 
@@ -38,7 +38,7 @@ void main() {
       });
 
       test('head, first, last, and reduce are total', () {
-        final set = NonEmptySet.of(1, const [2, 3]);
+        final set = NonEmptySet.of(1, tail: const [2, 3]);
 
         expect(set.head, 1);
         expect(set.first, 1);
@@ -49,11 +49,11 @@ void main() {
       test('is usable as a plain iterable', () {
         Iterable<int> asIterable(Iterable<int> values) => values;
 
-        expect(asIterable(NonEmptySet.of(1, const [2])), {1, 2});
+        expect(asIterable(NonEmptySet.of(1, tail: const [2])), {1, 2});
         expect(NonEmptySet.of(1).contains(1), isTrue);
         const Object otherType = '1';
         expect(NonEmptySet.of(1).contains(otherType), isFalse);
-        expect(NonEmptySet.of(1, const [2]).containsAll([1, 2]), isTrue);
+        expect(NonEmptySet.of(1, tail: const [2]).containsAll([1, 2]), isTrue);
         expect(NonEmptySet.of(1).containsAll([1, 2]), isFalse);
         expect(NonEmptySet.of(1).lookup(1), 1);
         expect(NonEmptySet.of(1).lookup(2), isNull);
@@ -68,7 +68,7 @@ void main() {
 
     group('set views', () {
       test('asSet returns an unmodifiable view', () {
-        final set = NonEmptySet.of(1, const [2]);
+        final set = NonEmptySet.of(1, tail: const [2]);
         final view = set.asSet();
 
         expect(view, {1, 2});
@@ -79,7 +79,7 @@ void main() {
       });
 
       test('asSet computes set algebra that can be empty', () {
-        final set = NonEmptySet.of(1, const [2]);
+        final set = NonEmptySet.of(1, tail: const [2]);
 
         expect(set.asSet().intersection({2}), {2});
         expect(set.asSet().difference({1, 2}), isEmpty);
@@ -95,7 +95,7 @@ void main() {
       });
 
       test('toList keeps the iteration order', () {
-        expect(NonEmptySet.of(2, const [1]).toList(), [2, 1]);
+        expect(NonEmptySet.of(2, tail: const [1]).toList(), [2, 1]);
       });
     });
 
@@ -122,8 +122,8 @@ void main() {
       });
 
       test('union keeps order without changing either set', () {
-        final left = NonEmptySet.of(2, const [1]);
-        final right = NonEmptySet.of(1, const [3]);
+        final left = NonEmptySet.of(2, tail: const [1]);
+        final right = NonEmptySet.of(1, tail: const [3]);
         final result = left.union(right);
 
         expect(result, isA<NonEmptySet<int>>());
@@ -135,7 +135,7 @@ void main() {
       });
 
       test('union with itself stays non-empty and keeps order', () {
-        final set = NonEmptySet.of(2, const [1]);
+        final set = NonEmptySet.of(2, tail: const [1]);
 
         expect(set.union(set).toList(), [2, 1]);
       });
@@ -152,7 +152,7 @@ void main() {
     group('transformations', () {
       test('map keeps the lazy Iterable contract', () {
         var callCount = 0;
-        final result = NonEmptySet.of(1, const [2]).map((value) {
+        final result = NonEmptySet.of(1, tail: const [2]).map((value) {
           callCount++;
           return value * 2;
         });
@@ -165,7 +165,7 @@ void main() {
       });
 
       test('mapToNonEmptyList keeps equal results', () {
-        final result = NonEmptySet.of(1, const [2, 3]).mapToNonEmptyList(
+        final result = NonEmptySet.of(1, tail: const [2, 3]).mapToNonEmptyList(
           (value) => value.isEven,
         );
 
@@ -174,7 +174,7 @@ void main() {
       });
 
       test('mapToNonEmptySet collapses equal results', () {
-        final result = NonEmptySet.of(1, const [2, 3])
+        final result = NonEmptySet.of(1, tail: const [2, 3])
             .mapToNonEmptySet((value) => value.isEven);
 
         expect(result, {false, true});
@@ -183,7 +183,7 @@ void main() {
 
       test('mapIndexedToNonEmptyList exposes the iteration index', () {
         final result =
-            NonEmptySet.of('a', const ['b']).mapIndexedToNonEmptyList(
+            NonEmptySet.of('a', tail: const ['b']).mapIndexedToNonEmptyList(
           (index, letter) => '$index$letter',
         );
 
@@ -192,7 +192,7 @@ void main() {
       });
 
       test('mapIndexedToNonEmptySet collapses equal results', () {
-        final result = NonEmptySet.of('a', const ['b'])
+        final result = NonEmptySet.of('a', tail: const ['b'])
             .mapIndexedToNonEmptySet((index, letter) => letter.length);
 
         expect(result, {1});
@@ -200,8 +200,8 @@ void main() {
       });
 
       test('flatMapToNonEmptyList concatenates the results', () {
-        final result = NonEmptySet.of(1, const [2]).flatMapToNonEmptyList(
-          (value) => NonEmptySet.of(value, [-value]),
+        final result = NonEmptySet.of(1, tail: const [2]).flatMapToNonEmptyList(
+          (value) => NonEmptySet.of(value, tail: [-value]),
         );
 
         expect(result, [1, -1, 2, -2]);
@@ -209,8 +209,8 @@ void main() {
       });
 
       test('flatMapToNonEmptySet collapses equal results', () {
-        final result = NonEmptySet.of(1, const [2]).flatMapToNonEmptySet(
-          (value) => NonEmptyList.of(value, [value]),
+        final result = NonEmptySet.of(1, tail: const [2]).flatMapToNonEmptySet(
+          (value) => NonEmptyList.of(value, tail: [value]),
         );
 
         expect(result, {1, 2});
@@ -218,7 +218,7 @@ void main() {
       });
 
       test('distinct returns the same immutable set', () {
-        final set = NonEmptySet.of(1, const [2]);
+        final set = NonEmptySet.of(1, tail: const [2]);
         final result = set.distinct();
 
         expect(result, {1, 2});
@@ -227,7 +227,7 @@ void main() {
       });
 
       test('distinctBy keeps the first occurrence of each key', () {
-        final result = NonEmptySet.of('one', const ['three', 'two'])
+        final result = NonEmptySet.of('one', tail: const ['three', 'two'])
             .distinctBy((word) => word.length);
 
         expect(result, {'one', 'three'});
@@ -236,7 +236,8 @@ void main() {
 
       test('distinctBy calls selector once per element in order', () {
         final visited = <int>[];
-        final result = NonEmptySet.of(1, const [2, 3]).distinctBy((value) {
+        final result =
+            NonEmptySet.of(1, tail: const [2, 3]).distinctBy((value) {
           visited.add(value);
           return value.isOdd;
         });
@@ -246,7 +247,8 @@ void main() {
       });
 
       test('zip pairs elements by position', () {
-        final result = NonEmptySet.of(1, const [2]).zip(NonEmptySet.of('a'));
+        final result =
+            NonEmptySet.of(1, tail: const [2]).zip(NonEmptySet.of('a'));
 
         expect(result, [(1, 'a')]);
       });
@@ -254,7 +256,7 @@ void main() {
 
     group('conversions', () {
       test('toNonEmptyList keeps the iteration order', () {
-        expect(NonEmptySet.of(2, const [1]).toNonEmptyList(), [2, 1]);
+        expect(NonEmptySet.of(2, tail: const [1]).toNonEmptyList(), [2, 1]);
       });
 
       test('toNonEmptySet returns the same immutable set', () {
@@ -280,7 +282,7 @@ void main() {
       });
 
       test('Iterable conversions reuse a set with the exact element type', () {
-        final set = NonEmptySet.of(1, const [2]);
+        final set = NonEmptySet.of(1, tail: const [2]);
         final Iterable<int> source = set;
 
         expect(
@@ -320,8 +322,8 @@ void main() {
 
     group('equality', () {
       test('the same elements in any order are equal', () {
-        final set = NonEmptySet.of(1, const [2]);
-        final reordered = NonEmptySet.of(2, const [1]);
+        final set = NonEmptySet.of(1, tail: const [2]);
+        final reordered = NonEmptySet.of(2, tail: const [1]);
 
         expect(set == reordered, isTrue);
         expect(set.hashCode, reordered.hashCode);
@@ -329,8 +331,8 @@ void main() {
       });
 
       test('equal elements with different type arguments are equal', () {
-        final integers = NonEmptySet<int>.of(1, const [2]);
-        final numbers = NonEmptySet<num>.of(2, const [1]);
+        final integers = NonEmptySet<int>.of(1, tail: const [2]);
+        final numbers = NonEmptySet<num>.of(2, tail: const [1]);
 
         expect(integers == numbers, isTrue);
         expect(numbers == integers, isTrue);
@@ -338,7 +340,10 @@ void main() {
       });
 
       test('different elements are not equal', () {
-        expect(NonEmptySet.of(1, const [2]) == NonEmptySet.of(1), isFalse);
+        expect(
+          NonEmptySet.of(1, tail: const [2]) == NonEmptySet.of(1),
+          isFalse,
+        );
         expect(NonEmptySet.of(1) == NonEmptySet.of(2), isFalse);
 
         final Object otherElementType = NonEmptySet.of('1');
@@ -359,7 +364,7 @@ void main() {
       });
 
       test('toString matches the set form', () {
-        expect(NonEmptySet.of(1, const [2]).toString(), '{1, 2}');
+        expect(NonEmptySet.of(1, tail: const [2]).toString(), '{1, 2}');
       });
     });
   });
