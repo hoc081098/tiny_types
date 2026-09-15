@@ -77,6 +77,7 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   /// ```dart
   /// NonEmptyList.of(1, tail: [2, 3]).tail.toList(); // [2, 3]
   /// ```
+  @override
   @useResult
   Iterable<T> get tail => _elements.skip(1);
 

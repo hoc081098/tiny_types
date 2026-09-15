@@ -46,6 +46,15 @@ void main() {
         expect(set.reduce((left, right) => left + right), 6);
       });
 
+      test('tail is lazy and keeps first-occurrence order', () {
+        final set = NonEmptySet.of(2, tail: const [1, 2, 3]);
+        final tail = set.tail;
+
+        expect(tail, [1, 3]);
+        expect(tail, isNot(isA<Set<int>>()));
+        expect(NonEmptySet.of(1).tail, isEmpty);
+      });
+
       test('is usable as a plain iterable', () {
         Iterable<int> asIterable(Iterable<int> values) => values;
 

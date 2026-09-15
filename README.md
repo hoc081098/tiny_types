@@ -85,9 +85,9 @@ The types do not implement `List`, `Set`, or `Map`, whose interfaces include
 mutating members. `plus` and `plusAll` return new non-empty collections
 without changing the originals.
 
-All three expose a `head` that cannot fail due to an empty collection. For a
-`NonEmptyMap`, it is the first `MapEntry`. `NonEmptyList` and `NonEmptyMap`
-also expose a lazy `tail`, which may be empty.
+All three expose a `head` that cannot fail due to an empty collection and a
+lazy `tail` containing the remaining elements or entries. The `tail` may be
+empty. For a `NonEmptyMap`, `head` and `tail` contain `MapEntry` values.
 
 - `NonEmptyList` provides indexing and list searches.
 - `NonEmptySet` provides `containsAll`, `lookup`, and non-empty `union`.

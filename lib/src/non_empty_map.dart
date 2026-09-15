@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 
 import 'option.dart';
 
-/// An immutable map guaranteed to contain at least one entry.
+/// An immutable insertion-ordered map guaranteed to contain at least one entry.
 ///
 /// ## Creating a map
 ///

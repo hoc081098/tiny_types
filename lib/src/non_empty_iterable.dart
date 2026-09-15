@@ -72,6 +72,18 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   @useResult
   T get head;
 
+  /// The elements after [head], in iteration order.
+  ///
+  /// The result is a lazy [Iterable] and is empty when this collection has a
+  /// single element.
+  ///
+  /// ```dart
+  /// NonEmptyList.of(1, tail: [2, 3]).tail.toList(); // [2, 3]
+  /// NonEmptySet.of(1, tail: [2, 3]).tail.toList(); // [2, 3]
+  /// ```
+  @useResult
+  Iterable<T> get tail;
+
   @override
   @nonVirtual
   @useResult

@@ -72,6 +72,18 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
   @useResult
   T get head => _elements.first;
 
+  /// The elements after [head], in first-occurrence order.
+  ///
+  /// The result is a lazy [Iterable] and is empty when this set has a single
+  /// element.
+  ///
+  /// ```dart
+  /// NonEmptySet.of(1, tail: [2, 3]).tail.toList(); // [2, 3]
+  /// ```
+  @override
+  @useResult
+  Iterable<T> get tail => _elements.skip(1);
+
   @override
   @useResult
   NonEmptySet<T> plus(T element) =>
