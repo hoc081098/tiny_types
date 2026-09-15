@@ -17,8 +17,14 @@ void main() {
       });
 
       test('of keeps first key position and the last value', () {
-        final map =
-            NonEmptyMap.of(('a', 1), tail: const {'b': 2, 'a': 3, 'c': 4});
+        final map = NonEmptyMap.of(
+          ('a', 1),
+          tail: const {
+            'b': 2,
+            'a': 3,
+            'c': 4,
+          },
+        );
 
         expect(map.keys, ['a', 'b', 'c']);
         expect(map.values, [3, 2, 4]);
@@ -173,42 +179,44 @@ void main() {
         expect(result.asMap(), {'same': 2});
         expect(result.head.key, 'same');
       });
-    });
 
-    group('cast conversion', () {
-      test('copies widened keys and values before adding new entries', () {
-        final integers = NonEmptyMap<int, int>.of((1, 2));
-        final widened = integers.castToNonEmptyMap<num, num>();
-        final result = widened.plus((1.5, 2.5));
+      group('cast conversion', () {
+        test('copies widened keys and values before adding new entries', () {
+          final integers = NonEmptyMap<int, int>.of((1, 2));
+          final widened = integers.castToNonEmptyMap<num, num>();
+          final result = widened.plus((1.5, 2.5));
 
-        expect(result.asMap(), {1: 2, 1.5: 2.5});
-        expect(integers.asMap(), {1: 2});
-      });
+          expect(result.asMap(), {1: 2, 1.5: 2.5});
+          expect(integers.asMap(), {1: 2});
+        });
 
-      test('rejects a key or value that cannot be cast', () {
-        final map = NonEmptyMap<int, int>.of((1, 2));
+        test('rejects a key or value that cannot be cast', () {
+          final map = NonEmptyMap<int, int>.of((1, 2));
 
-        expect(
-          () => map.castToNonEmptyMap<String, num>(),
-          throwsA(isA<TypeError>()),
-        );
-        expect(
-          () => map.castToNonEmptyMap<num, String>(),
-          throwsA(isA<TypeError>()),
-        );
-      });
+          expect(
+            () => map.castToNonEmptyMap<String, num>(),
+            throwsA(isA<TypeError>()),
+          );
+          expect(
+            () => map.castToNonEmptyMap<num, String>(),
+            throwsA(isA<TypeError>()),
+          );
+        });
 
-      test('widened receivers reject incompatible additions until copied', () {
-        final NonEmptyMap<num, num> widened = NonEmptyMap<int, int>.of((1, 2));
+        test('widened receivers reject incompatible additions until copied',
+            () {
+          final NonEmptyMap<num, num> widened =
+              NonEmptyMap<int, int>.of((1, 2));
 
-        expect(() => widened.plus((1.5, 2.5)), throwsA(isA<TypeError>()));
-        expect(
-          () => widened.plusAll(<num, num>{1.5: 2.5}),
-          throwsA(isA<TypeError>()),
-        );
-        expect(widened.castToNonEmptyMap<num, num>().plus((1.5, 2.5)).asMap(), {
-          1: 2,
-          1.5: 2.5,
+          expect(() => widened.plus((1.5, 2.5)), throwsA(isA<TypeError>()));
+          expect(
+            () => widened.plusAll(<num, num>{1.5: 2.5}),
+            throwsA(isA<TypeError>()),
+          );
+          expect(
+            widened.castToNonEmptyMap<num, num>().plus((1.5, 2.5)).asMap(),
+            {1: 2, 1.5: 2.5},
+          );
         });
       });
     });
@@ -247,7 +255,7 @@ void main() {
       });
 
       test('OrNone returns some or none', () {
-        expect({'a': 1}.toNonEmptyMapOrNone().getOrNull()?.asMap(), {'a': 1});
+        expect({'a': 1}.toNonEmptyMapOrNone().getOrNull()!.asMap(), {'a': 1});
         expect(<String, int>{}.toNonEmptyMapOrNone().isNone, isTrue);
       });
 
