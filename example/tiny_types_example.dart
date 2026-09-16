@@ -26,9 +26,18 @@ Future<void> main() async {
   );
   final products = cart.toNonEmptySet();
 
+  // --------- Price catalog and order total ---------
+  final prices = NonEmptyMap.of(('coffee', 4.50), tail: const {'tea': 3.00});
+  final total = cart.fold<double>(
+    0,
+    (sum, item) =>
+        sum + (prices[item] ?? (throw StateError('Unknown product: $item'))),
+  );
+
   _log('Customer: $displayName');
   _log('Items: ${lines.join(', ')}');
   _log('Unique products: ${products.join(', ')}');
+  _log('Total: \$${total.toStringAsFixed(2)}');
 
   // --------- Save the order ---------
   final saved = await _saveOrder(cart);
