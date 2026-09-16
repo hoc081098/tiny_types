@@ -1,5 +1,5 @@
-/// Lightweight, focused utility types for Dart, including Option, Unit,
-/// non-empty collections, and practical utilities built around them.
+/// Small, focused types for Dart with explicit invariants and practical APIs.
+/// Includes `Option`, `Unit`, and non-empty collections.
 library;
 
 export 'src/non_empty_iterable.dart';

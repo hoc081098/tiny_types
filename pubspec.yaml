@@ -1,7 +1,7 @@
 name: tiny_types
 description: >-
-  Lightweight, focused utility types for Dart, including Option, Unit,
-  non-empty collections, and practical utilities built around them.
+  Small, focused types for Dart with explicit invariants and practical APIs.
+  Includes Option, Unit, and non-empty collections.
 version: 1.0.0
 repository: https://github.com/hoc081098/tiny_types
 

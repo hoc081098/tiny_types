@@ -147,6 +147,8 @@ elements eagerly and throw a `TypeError` if a cast fails. For maps, use
 See the [runnable checkout example](example/tiny_types_example.dart) for all
 five types together.
 
+See the [roadmap](ROADMAP.md) for the package's scope and planned value types.
+
 ## 5. License
 
 ```
