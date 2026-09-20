@@ -1,19 +1,41 @@
 import 'package:meta/meta.dart';
 
-/// An immutable value that is either present ([Some]) or absent ([None]).
+/// An immutable option containing either a value ([Some]) or no value ([None]).
 ///
-/// `Option<T>` makes absence explicit without exposing `null` to the rest of a
-/// computation. Use [map], [flatMap], and [filter] to transform a present
-/// value, then use [fold], [OptionFallbackExtension.getOrElse], or [getOrNull]
-/// when a concrete result is needed.
+/// ## Creation and nullability
 ///
-/// The type parameter [T] must be non-nullable. To convert a nullable value,
-/// use [Option.fromNullable] or [NullableObjectToOption.toOption].
-/// All callbacks are invoked synchronously, and callback exceptions are not
-/// caught.
+/// Presence and nullability are independent. `Option<String>` has a
+/// non-nullable payload; `Option<String?>` may contain `null`.
+/// A `Some(null)` is present and differs from [None].
+///
+/// Choose how to create an option based on how `null` should be handled:
+///
+/// - [Option.some] and [ObjectToSome.some] wrap a value unchanged, including
+///   `null` when [T] is nullable.
+/// - [Option.fromNullable] and [NullableObjectToOption.toOption] treat `null`
+///   as absence.
+/// - [Option.none] creates an absent option explicitly.
+///
+/// ## Transforming and consuming
+///
+/// - [map] transforms the contained value while preserving absence.
+/// - [flatMap] chains an option-returning operation.
+/// - [filter] keeps the contained value when the predicate returns `true`;
+///   otherwise, it returns [None].
+/// - [fold] produces a value by handling both variants.
+/// - [OptionFallbackExtension.getOrElse] returns the contained value or a
+///   fallback for [None].
+/// - [OptionFallbackExtension.or] returns this option when it is [Some], or an
+///   eagerly evaluated alternative when it is [None].
+/// - [OptionFallbackExtension.orElse] lazily computes an alternative for
+///   [None].
+/// - [getOrNull] returns the contained value, or `null` for [None]. It cannot
+///   distinguish `Some(null)` from [None].
+///
+/// Callbacks run synchronously, and their exceptions propagate to the caller.
 ///
 /// ```dart
-/// const String? nickname = 'Ada';
+/// const String? nickname = ' Ada ';
 ///
 /// final label = Option.fromNullable(nickname)
 ///     .map((name) => name.trim())
@@ -21,18 +43,20 @@ import 'package:meta/meta.dart';
 ///     .fold(
 ///       ifSome: (name) => 'Hello, $name!',
 ///       ifNone: () => 'Hello!',
-///     );
+///     ); // Hello, Ada!
 /// ```
 @immutable
-sealed class Option<T extends Object> {
+sealed class Option<T> {
   const Option._();
 
   /// Creates a [Some] containing [value].
   ///
-  /// Because [T] extends [Object], [value] cannot be `null`.
+  /// The value is kept unchanged, including `null` when [T] is nullable.
+  /// Use [Option.fromNullable] to treat `null` as absence instead.
   ///
   /// ```dart
   /// final Option<int> answer = Option.some(42);
+  /// const Option<String?> presentNull = Option.some(null);
   /// ```
   const factory Option.some(T value) = Some<T>;
 
@@ -49,7 +73,7 @@ sealed class Option<T extends Object> {
   /// Creates a [Some] for a non-null [value], or [None] for `null`.
   ///
   /// ```dart
-  /// final String? name = readName();
+  /// const String? name = 'Ada';
   /// final Option<String> optionalName = Option.fromNullable(name);
   /// ```
   factory Option.fromNullable(T? value) =>
@@ -116,15 +140,16 @@ sealed class Option<T extends Object> {
 
   /// Transforms the contained value with [mapper].
   ///
-  /// [mapper] is called exactly once for [Some] and is not called for [None].
-  /// An absent option remains absent.
+  /// For [Some], [mapper] is called exactly once and its result is wrapped in
+  /// [Some]. For [None], [mapper] is not called and the option remains absent.
+  /// A `null` result remains present.
   ///
   /// ```dart
   /// final result = Option.some(21).map((value) => value * 2);
   /// // Option.Some(42)
   /// ```
   @useResult
-  Option<R> map<R extends Object>(R Function(T value) mapper) {
+  Option<R> map<R>(R Function(T value) mapper) {
     final self = this;
     return switch (self) {
       Some(value: final v) => Some(mapper(v)),
@@ -134,8 +159,9 @@ sealed class Option<T extends Object> {
 
   /// Transforms the contained value with an option-producing [mapper].
   ///
-  /// Use `flatMap` when the transformation can itself return [None]. [mapper]
-  /// is not called when this option is absent.
+  /// For [Some], [mapper] is called exactly once and its option is returned
+  /// directly. For [None], [mapper] is not called and the option remains
+  /// absent.
   ///
   /// ```dart
   /// Option<double> reciprocal(int value) =>
@@ -145,7 +171,7 @@ sealed class Option<T extends Object> {
   /// // Option.Some(0.5)
   /// ```
   @useResult
-  Option<R> flatMap<R extends Object>(Option<R> Function(T value) mapper) {
+  Option<R> flatMap<R>(Option<R> Function(T value) mapper) {
     final self = this;
     return switch (self) {
       Some(value: final v) => mapper(v),
@@ -155,12 +181,16 @@ sealed class Option<T extends Object> {
 
   /// Keeps a contained value only when it satisfies [predicate].
   ///
-  /// [predicate] is not called for [None]. A matching [Some] and an existing
-  /// [None] are returned unchanged.
+  /// For [Some], [predicate] is called exactly once. A matching [Some] and an
+  /// existing [None] are returned unchanged; a non-matching [Some] becomes
+  /// [None].
   ///
   /// ```dart
   /// final positive = Option.some(3).filter((value) => value > 0);
-  /// final absent = Option.some(-1).filter((value) => value > 0);
+  /// // Option.Some(3)
+  ///
+  /// final notSatisfied = Option.some(-1).filter((value) => value > 0);
+  /// // Option.None
   /// ```
   @useResult
   Option<T> filter(bool Function(T value) predicate) {
@@ -193,7 +223,9 @@ sealed class Option<T extends Object> {
 
   /// Returns the contained value, or `null` when this option is [None].
   ///
-  /// This is useful at an API boundary that expects a nullable value.
+  /// This is useful at an API boundary that expects a nullable value. It loses
+  /// the distinction between `Some(null)` and [None]; use [fold] or [isSome]
+  /// when that distinction matters.
   ///
   /// ```dart
   /// Option.some(42).getOrNull(); // 42
@@ -202,7 +234,7 @@ sealed class Option<T extends Object> {
   @useResult
   T? getOrNull() => fold(ifSome: (v) => v, ifNone: () => null);
 
-  /// Returns the value as an unmodifiable, zero-or-one-element list.
+  /// Returns the contained value as an unmodifiable, zero-or-one-element list.
   ///
   /// ```dart
   /// Option.some(42).toList(); // [42]
@@ -215,17 +247,16 @@ sealed class Option<T extends Object> {
       );
 }
 
-/// Adds lazy fallback operations to [Option].
-extension OptionFallbackExtension<T extends Object> on Option<T> {
+/// Adds eager and lazy fallback operations to [Option].
+extension OptionFallbackExtension<T> on Option<T> {
   // Keep this API extension-based. A None object's reified supertype is
   // Option<Never>, so an instance method accepting T Function() would check a
   // fallback against Never Function() at runtime.
 
   /// Returns the contained value, or a lazily computed fallback for [None].
   ///
-  /// [defaultValue] is not called when this option is [Some]. For [None], it
-  /// is called exactly once and its result is returned. Any exception thrown
-  /// by [defaultValue] is allowed to propagate.
+  /// [defaultValue] is called exactly once for [None] and is not called for
+  /// [Some]. Any exception thrown by [defaultValue] propagates to the caller.
   ///
   /// ```dart
   /// Option.some(42).getOrElse(() => 0); // 42
@@ -237,10 +268,24 @@ extension OptionFallbackExtension<T extends Object> on Option<T> {
         None() => defaultValue(),
       };
 
-  /// Returns this option when it is [Some], otherwise returns [alternative].
+  /// Returns this option when it is [Some], or [alternative] when it is [None].
   ///
-  /// [alternative] is evaluated lazily, so it is not called when a value is
-  /// already present.
+  /// [alternative] is evaluated before this method is called, even when this
+  /// option is [Some]. Use [orElse] to create the alternative lazily.
+  ///
+  /// ```dart
+  /// final result = Option<int>.none().or(Option.some(42));
+  /// // Option.Some(42)
+  /// ```
+  @useResult
+  Option<T> or(Option<T> alternative) => isSome ? this : alternative;
+
+  /// Returns this option when it is [Some], or the option produced by
+  /// [alternative] when it is [None].
+  ///
+  /// [alternative] is evaluated exactly once for [None] and is not evaluated
+  /// for [Some]. Any exception thrown by [alternative] propagates to the
+  /// caller.
   ///
   /// ```dart
   /// final result = Option<int>.none().orElse(() => Option.some(42));
@@ -252,10 +297,11 @@ extension OptionFallbackExtension<T extends Object> on Option<T> {
 }
 
 /// Adds one-level flattening to nested [Option] values.
-extension FlattenOptionExtension<T extends Object> on Option<Option<T>> {
+extension FlattenOptionExtension<T> on Option<Option<T>> {
   /// Removes one level of [Option] nesting.
   ///
-  /// The result is absent when either the outer or inner option is [None].
+  /// An outer [Some] returns its contained option unchanged. An outer [None]
+  /// remains absent.
   ///
   /// ```dart
   /// final nested = Option.some(Option.some(42));
@@ -269,12 +315,13 @@ extension FlattenOptionExtension<T extends Object> on Option<Option<T>> {
 }
 
 /// Adds pairwise combination to [Option] values of the same type.
-extension CombineOptionExtension<T extends Object> on Option<T> {
+extension CombineOptionExtension<T> on Option<T> {
   /// Combines the values from this option and [other].
   ///
-  /// The [combine] callback is called exactly once when both options are
-  /// [Some]. If either option is [None], the result is [None] and [combine] is
-  /// not called.
+  /// When both options are [Some], [combine] is called exactly once and its
+  /// result is wrapped in [Some], including a `null` result. If either option
+  /// is [None], the result is [None] and [combine] is not called. Any exception
+  /// thrown by [combine] propagates to the caller.
   ///
   /// ```dart
   /// final fullName = Option.some('Ada').combine(
@@ -302,7 +349,7 @@ extension CombineOptionExtension<T extends Object> on Option<T> {
 /// Prefer [Option.some] when the surrounding code is expressed in terms of
 /// [Option]. Constructing `Some` directly is equivalent.
 @immutable
-final class Some<T extends Object> extends Option<T> {
+final class Some<T> extends Option<T> {
   /// Creates an option containing [value].
   const Some(this.value) : super._();
 
@@ -355,21 +402,26 @@ final class None extends Option<Never> {
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   @useResult
-  Option<R> _retag<R extends Object>() => this;
+  Option<R> _retag<R>() => this;
 }
 
-/// Adds a concise conversion from a non-null value to [Some].
-extension ObjectToSome<T extends Object> on T {
-  /// Wraps this value in [Some].
+/// Adds a concise conversion from any value to [Some].
+extension ObjectToSome<T> on T {
+  /// Returns a [Some] containing this value.
+  ///
+  /// A `null` value remains present. Use [NullableObjectToOption.toOption] to
+  /// treat `null` as absence instead.
   ///
   /// ```dart
   /// final Option<int> answer = 42.some();
+  /// const String? name = null;
+  /// final Option<String?> presentNull = name.some();
   /// ```
   @pragma('vm:always-consider-inlining')
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   @useResult
-  // Follow Arrow-kt style.
+  // Keep the established Arrow-style name for this wrapping operation.
   // ignore: use_to_and_as_if_applicable
   Some<T> some() => Some(this);
 }
@@ -377,6 +429,9 @@ extension ObjectToSome<T extends Object> on T {
 /// Adds conversion from a nullable value to [Option].
 extension NullableObjectToOption<T extends Object> on T? {
   /// Returns [Some] for a non-null value, or [None] for `null`.
+  ///
+  /// The payload type [T] is non-nullable. Use [ObjectToSome.some] to preserve
+  /// `null` as a present payload instead.
   ///
   /// ```dart
   /// const String? name = 'Ada';
