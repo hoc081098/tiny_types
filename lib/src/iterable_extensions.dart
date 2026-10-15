@@ -1,5 +1,6 @@
 import 'package:meta/meta.dart';
 
+import 'non_empty_iterable.dart';
 import 'option.dart';
 
 /// Adds presence-preserving lookups to any [Iterable].
@@ -9,8 +10,11 @@ import 'option.dart';
 /// predicate exceptions propagate to the caller.
 extension IterableOptionExtension<T> on Iterable<T> {
   /// Returns the first element as [Some], or [None] when empty.
+  /// A first element of `null` remains present.
   ///
-  /// Reads at most one element. A first element of `null` remains present.
+  /// For [List] and [Set], checks [Iterable.isEmpty] before using
+  /// [Iterable.first]. For [NonEmptyIterable], uses [NonEmptyIterable.first]
+  /// directly. Other iterables read at most one element.
   ///
   /// ```dart
   /// <int?>[1, 2].firstOrNone; // Option.Some(1)
@@ -19,6 +23,13 @@ extension IterableOptionExtension<T> on Iterable<T> {
   /// ```
   @useResult
   Option<T> get firstOrNone {
+    if (this is List<T> || this is Set<T>) {
+      return isEmpty ? const None() : Option<T>.some(first);
+    }
+    if (this is NonEmptyIterable<T>) {
+      return Some(first);
+    }
+
     final iterator = this.iterator;
     if (iterator.moveNext()) {
       return Some(iterator.current);
@@ -28,15 +39,21 @@ extension IterableOptionExtension<T> on Iterable<T> {
 
   /// Returns the last element as [Some], or [None] when empty.
   ///
+  /// A last element of `null` remains present.
+  /// An infinite iterable cannot produce a result.
+  ///
   /// For [List] and [Set], checks [Iterable.isEmpty] before using
-  /// [Iterable.last]. Other iterables are traversed once. A last element of
-  /// `null` remains present. An infinite iterable cannot produce a result.
+  /// [Iterable.last]. For [NonEmptyIterable], uses [NonEmptyIterable.last]
+  /// directly. Other iterables are traversed once.
   @useResult
   Option<T> get lastOrNone {
     // The SDK's EfficientLengthIterable marker is internal. Use the same
     // fast path for these public collection interfaces.
     if (this is List<T> || this is Set<T>) {
       return isEmpty ? const None() : Option<T>.some(last);
+    }
+    if (this is NonEmptyIterable<T>) {
+      return Some(last);
     }
 
     final iterator = this.iterator;
@@ -54,10 +71,16 @@ extension IterableOptionExtension<T> on Iterable<T> {
   /// Returns the only element as [Some] when there is exactly one, or [None]
   /// otherwise.
   ///
-  /// Reads at most two elements without throwing for an empty or
-  /// multiple-element iterable. A sole `null` element remains present.
+  /// For [List], [Set], and [NonEmptyIterable], checks [Iterable.length]
+  /// before using [Iterable.single]. Other iterables read at most two
+  /// elements. This does not throw for an empty or multiple-element iterable.
+  /// A sole `null` element remains present.
   @useResult
   Option<T> get singleOrNone {
+    if (this is List<T> || this is Set<T> || this is NonEmptyIterable<T>) {
+      return length == 1 ? Option<T>.some(single) : const None();
+    }
+
     final iterator = this.iterator;
     if (!iterator.moveNext()) {
       return const None();

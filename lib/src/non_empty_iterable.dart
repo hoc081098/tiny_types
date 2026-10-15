@@ -89,6 +89,10 @@ sealed class NonEmptyIterable<T> extends Iterable<T> {
   @useResult
   T get first => head;
 
+  @useResult
+  @override
+  T get last;
+
   /// Always `false`.
   @override
   @nonVirtual

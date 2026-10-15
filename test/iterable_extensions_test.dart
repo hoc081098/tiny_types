@@ -6,6 +6,11 @@ import 'package:tiny_types/tiny_types.dart';
 
 void main() {
   group('Iterable Option lookups', () {
+    final collections = <String, Iterable<int?> Function(Iterable<int?>)>{
+      'list': (values) => _GetterOnlyList(List<int?>.of(values)),
+      'set': (values) => _GetterOnlySet(Set<int?>.of(values)),
+    };
+
     group('firstOrNone', () {
       test('returns the first element or none when empty', () {
         expect([1, 2].firstOrNone, const Some(1));
@@ -27,6 +32,25 @@ void main() {
 
         expect(values().firstOrNone, const Some<int?>(null));
       });
+
+      for (final MapEntry(key: k, value: v) in collections.entries) {
+        test('uses $k getters without requesting an iterator', () {
+          expect(v(<int?>[]).firstOrNone, const None());
+          expect(v([1, 2]).firstOrNone, const Some(1));
+          expect(v([null, 1]).firstOrNone, const Some<int?>(null));
+        });
+      }
+
+      test('preserves a first null in non-empty lists and sets', () {
+        final values = <Iterable<int?>>[
+          NonEmptyList<int?>.of(null, tail: const [1]),
+          NonEmptySet<int?>.of(null, tail: const [1]),
+        ];
+
+        for (final collection in values) {
+          expect(collection.firstOrNone, const Some<int?>(null));
+        }
+      });
     });
 
     group('lastOrNone', () {
@@ -47,11 +71,6 @@ void main() {
         expect(values.lastOrNone, const Some(3));
       });
 
-      final collections = <String, Iterable<int?> Function(Iterable<int?>)>{
-        'list': (values) => _GetterOnlyList(List<int?>.of(values)),
-        'set': (values) => _GetterOnlySet(Set<int?>.of(values)),
-      };
-
       for (final MapEntry(key: k, value: v) in collections.entries) {
         test('uses $k getters without requesting an iterator', () {
           expect(v(<int?>[]).lastOrNone, const None());
@@ -60,6 +79,28 @@ void main() {
           expect(v([null]).lastOrNone, const Some<int?>(null));
         });
       }
+
+      test('supports widened non-empty lists and sets', () {
+        final values = <Iterable<num?>>[
+          NonEmptyList<int>.of(1, tail: const [2]),
+          NonEmptySet<int>.of(1, tail: const [2]),
+        ];
+
+        for (final collection in values) {
+          expect(collection.lastOrNone, const Some(2));
+        }
+      });
+
+      test('preserves a last null in non-empty lists and sets', () {
+        final values = <Iterable<int?>>[
+          NonEmptyList<int?>.of(1, tail: const [null]),
+          NonEmptySet<int?>.of(1, tail: const [null]),
+        ];
+
+        for (final collection in values) {
+          expect(collection.lastOrNone, const Some<int?>(null));
+        }
+      });
 
       test('evaluates a lazy mapped iterable once in order', () {
         final seen = <int>[];
@@ -103,6 +144,34 @@ void main() {
 
       test('traverses a single-use iterable once', () {
         expect(_SingleUseIterable([1]).singleOrNone, const Some(1));
+      });
+
+      for (final MapEntry(key: k, value: v) in collections.entries) {
+        test('uses $k getters without requesting an iterator', () {
+          expect(v(<int?>[]).singleOrNone, const None());
+          expect(v([1]).singleOrNone, const Some(1));
+          expect(v([null]).singleOrNone, const Some<int?>(null));
+          expect(v([1, 2]).singleOrNone, const None());
+          expect(v([null, 1]).singleOrNone, const None());
+        });
+      }
+
+      test('checks cardinality in nullable non-empty lists and sets', () {
+        final singletons = <Iterable<num?>>[
+          NonEmptyList<Null>.of(null),
+          NonEmptySet<Null>.of(null),
+        ];
+        final multiple = <Iterable<num?>>[
+          NonEmptyList<int>.of(1, tail: const [2]),
+          NonEmptySet<int>.of(1, tail: const [2]),
+        ];
+
+        for (final collection in singletons) {
+          expect(collection.singleOrNone, const Some<num?>(null));
+        }
+        for (final collection in multiple) {
+          expect(collection.singleOrNone, const None());
+        }
       });
     });
 
