@@ -46,6 +46,31 @@ void main() {
 
         expect(values.lastOrNone, const Some(3));
       });
+
+      final collections = <String, Iterable<int?> Function(Iterable<int?>)>{
+        'list': (values) => _GetterOnlyList(List<int?>.of(values)),
+        'set': (values) => _GetterOnlySet(Set<int?>.of(values)),
+      };
+
+      for (final MapEntry(key: k, value: v) in collections.entries) {
+        test('uses $k getters without requesting an iterator', () {
+          expect(v(<int?>[]).lastOrNone, const None());
+          expect(v([1, 2]).lastOrNone, const Some(2));
+          expect(v([1, null]).lastOrNone, const Some<int?>(null));
+          expect(v([null]).lastOrNone, const Some<int?>(null));
+        });
+      }
+
+      test('evaluates a lazy mapped iterable once in order', () {
+        final seen = <int>[];
+        final values = [1, 2, 3].map((value) {
+          seen.add(value);
+          return value == 3 ? null : value;
+        });
+
+        expect(values.lastOrNone, const Some<int?>(null));
+        expect(seen, [1, 2, 3]);
+      });
     });
 
     group('singleOrNone', () {
@@ -301,6 +326,20 @@ void main() {
       });
     });
   });
+}
+
+class _GetterOnlyList<T> extends DelegatingList<T> {
+  _GetterOnlyList(super.base);
+
+  @override
+  Iterator<T> get iterator => throw StateError('Must use collection getters');
+}
+
+class _GetterOnlySet<T> extends DelegatingSet<T> {
+  _GetterOnlySet(super.base);
+
+  @override
+  Iterator<T> get iterator => throw StateError('Must use collection getters');
 }
 
 class _SingleUseIterable<T> extends IterableBase<T> {

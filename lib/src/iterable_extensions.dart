@@ -5,8 +5,8 @@ import 'option.dart';
 /// Adds presence-preserving lookups to any [Iterable].
 ///
 /// Lookups run synchronously without materializing a collection. A selected
-/// `null` element remains present as `Some(null)`. Iterator and predicate
-/// exceptions propagate to the caller.
+/// `null` element remains present as `Some(null)`. Iterator, getter, and
+/// predicate exceptions propagate to the caller.
 extension IterableOptionExtension<T> on Iterable<T> {
   /// Returns the first element as [Some], or [None] when empty.
   ///
@@ -28,15 +28,23 @@ extension IterableOptionExtension<T> on Iterable<T> {
 
   /// Returns the last element as [Some], or [None] when empty.
   ///
-  /// Traverses the iterable once. A last element of `null` remains present.
-  /// An infinite iterable cannot produce a result.
+  /// For [List] and [Set], checks [Iterable.isEmpty] before using
+  /// [Iterable.last]. Other iterables are traversed once. A last element of
+  /// `null` remains present. An infinite iterable cannot produce a result.
   @useResult
   Option<T> get lastOrNone {
+    // The SDK's EfficientLengthIterable marker is internal. Use the same
+    // fast path for these public collection interfaces.
+    if (this is List<T> || this is Set<T>) {
+      return isEmpty ? const None() : Option<T>.some(last);
+    }
+
     final iterator = this.iterator;
     if (!iterator.moveNext()) {
       return const None();
     }
     var result = iterator.current;
+
     while (iterator.moveNext()) {
       result = iterator.current;
     }
@@ -54,10 +62,12 @@ extension IterableOptionExtension<T> on Iterable<T> {
     if (!iterator.moveNext()) {
       return const None();
     }
+
     final result = iterator.current;
     if (iterator.moveNext()) {
       return const None();
     }
+
     return Some(result);
   }
 
@@ -85,21 +95,15 @@ extension IterableOptionExtension<T> on Iterable<T> {
   /// An infinite iterable cannot produce a result.
   @useResult
   Option<T> lastWhereOrNone(bool Function(T element) predicate) {
-    final iterator = this.iterator;
-    while (iterator.moveNext()) {
-      var result = iterator.current;
-      if (!predicate(result)) {
-        continue;
+    Option<T> result = const None();
+
+    for (final element in this) {
+      if (predicate(element)) {
+        result = Some(element);
       }
-      while (iterator.moveNext()) {
-        final element = iterator.current;
-        if (predicate(element)) {
-          result = element;
-        }
-      }
-      return Some(result);
     }
-    return const None();
+
+    return result;
   }
 
   /// Returns the matching element as [Some] when there is exactly one, or
@@ -117,9 +121,12 @@ extension IterableOptionExtension<T> on Iterable<T> {
     final iterator = this.iterator;
     while (iterator.moveNext()) {
       final result = iterator.current;
+
       if (!predicate(result)) {
         continue;
       }
+
+      // A second match means there is no single matching element.
       while (iterator.moveNext()) {
         if (predicate(iterator.current)) {
           return const None();
@@ -127,6 +134,7 @@ extension IterableOptionExtension<T> on Iterable<T> {
       }
       return Some(result);
     }
+
     return const None();
   }
 }
