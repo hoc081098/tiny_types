@@ -421,7 +421,7 @@ extension ObjectToSome<T> on T {
   @pragma('vm:prefer-inline')
   @pragma('dart2js:tryInline')
   @useResult
-  // Keep the established Arrow-style name for this wrapping operation.
+  // Keep the established Arrow-kt-style name for this wrapping operation.
   // ignore: use_to_and_as_if_applicable
   Some<T> some() => Some(this);
 }
