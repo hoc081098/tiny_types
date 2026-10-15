@@ -280,9 +280,10 @@ void main() {
       for (final entry in searches.entries) {
         test('${entry.key} skips the predicate for an empty iterable', () {
           expect(
-            entry.value(<int?>[], (value) {
-              fail('Must not call the predicate');
-            }),
+            entry.value(
+              <int?>[],
+              (value) => fail('Must not call the predicate'),
+            ),
             const None(),
           );
         });
