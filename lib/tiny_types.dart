@@ -2,6 +2,8 @@
 /// Includes `Option`, `Unit`, and non-empty collections.
 library;
 
+export 'src/iterable_extensions.dart';
+export 'src/map_extensions.dart';
 export 'src/non_empty_iterable.dart';
 export 'src/non_empty_map.dart';
 export 'src/option.dart';

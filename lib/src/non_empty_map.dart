@@ -9,8 +9,9 @@ import 'option.dart';
 /// ## Creating a map
 ///
 /// [NonEmptyMap.of] requires a first key-value pair. For a possibly empty
-/// [Map], [MapToNonEmptyMapExtension] provides `toNonEmptyMapOrNull()`,
-/// `toNonEmptyMapOrNone()`, and `toNonEmptyMapOrThrow()`.
+/// [Map], use [NonEmptyMap.from] to get an [Option]. The
+/// `toNonEmptyMapOrNull()`, `toNonEmptyMapOrNone()`, and
+/// `toNonEmptyMapOrThrow()` extensions are also available.
 ///
 /// Entries keep their first insertion position. A later value for an equal key
 /// replaces the earlier value without moving that key. Input maps are copied
@@ -58,6 +59,21 @@ final class NonEmptyMap<K, V> {
     Map<K, V> tail = const <Never, Never>{},
   }) =>
       NonEmptyMap._wrap(<K, V>{head.$1: head.$2, ...tail});
+
+  /// Returns [values] as a [NonEmptyMap], or [None] when empty.
+  ///
+  /// The input is eagerly copied into an insertion-ordered map before checking
+  /// emptiness, preserving `null` keys and values. Later changes to the input
+  /// are not visible through the result. Custom key equality and ordering are
+  /// not retained. Errors while reading the input propagate.
+  ///
+  /// ```dart
+  /// NonEmptyMap.from({'a': 1}); // Option.Some({a: 1})
+  /// NonEmptyMap.from(<String, int>{}); // Option.None
+  /// ```
+  @useResult
+  static Option<NonEmptyMap<K2, V2>> from<K2, V2>(Map<K2, V2> values) =>
+      values.toNonEmptyMapOrNull().toOption();
 
   // Never handed out directly or mutated after construction.
   final Map<K, V> _map;
@@ -210,8 +226,8 @@ final class NonEmptyMap<K, V> {
 extension MapToNonEmptyMapExtension<K, V> on Map<K, V> {
   /// Returns these entries as a [NonEmptyMap], or `null` when empty.
   ///
-  /// The input is copied before checking emptiness. Later changes to this map
-  /// are not visible through the result.
+  /// Conversion follows [NonEmptyMap.from], including its eager copy behavior.
+  /// Later changes to this map are not visible through the result.
   @useResult
   NonEmptyMap<K, V>? toNonEmptyMapOrNull() {
     final entries = Map<K, V>.of(this);
@@ -220,13 +236,13 @@ extension MapToNonEmptyMapExtension<K, V> on Map<K, V> {
 
   /// Returns these entries as an [Option] of [NonEmptyMap].
   ///
-  /// Conversion follows [toNonEmptyMapOrNull].
+  /// Equivalent to [NonEmptyMap.from], including its eager copy behavior.
   @useResult
-  Option<NonEmptyMap<K, V>> toNonEmptyMapOrNone() =>
-      toNonEmptyMapOrNull().toOption();
+  Option<NonEmptyMap<K, V>> toNonEmptyMapOrNone() => NonEmptyMap.from(this);
 
   /// Returns these entries as a [NonEmptyMap].
   ///
+  /// Conversion follows [NonEmptyMap.from], including its eager copy behavior.
   /// Throws a [StateError] when this map is empty. Prefer
   /// [toNonEmptyMapOrNull] or [toNonEmptyMapOrNone] when emptiness is a normal
   /// outcome.

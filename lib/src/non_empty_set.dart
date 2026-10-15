@@ -7,9 +7,9 @@ part of 'non_empty_iterable.dart';
 ///
 /// [NonEmptySet.of] takes a required first element, so the result cannot be
 /// empty. Equal values are kept only once, in first-occurrence order. For a
-/// possibly empty [Iterable], [IterableToNonEmptySetExtension] provides
+/// possibly empty [Iterable], use [NonEmptySet.from] to get an [Option]. The
 /// `toNonEmptySetOrNull()`, `toNonEmptySetOrNone()`, and
-/// `toNonEmptySetOrThrow()`.
+/// `toNonEmptySetOrThrow()` extensions are also available.
 ///
 /// ```dart
 /// final tags = NonEmptySet.of('dart', tail: ['dart', 'types']);
@@ -61,6 +61,21 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
     Iterable<T> tail = const <Never>[],
   }) =>
       NonEmptySet._wrap(<T>{head, ...tail});
+
+  /// Returns [values] as a [NonEmptySet], or [None] when empty.
+  ///
+  /// An existing [NonEmptySet] with the exact element type [E] is reused.
+  /// Otherwise, [values] is eagerly copied, keeping unique elements in
+  /// first-occurrence order, including `null`. Later changes to the input are
+  /// not visible through the result. Iteration exceptions propagate.
+  ///
+  /// ```dart
+  /// NonEmptySet.from([1, 2, 1]); // Option.Some({1, 2})
+  /// NonEmptySet.from(<int>[]); // Option.None
+  /// ```
+  @useResult
+  static Option<NonEmptySet<E>> from<E>(Iterable<E> values) =>
+      values.toNonEmptySetOrNull().toOption();
 
   // Never handed out directly, and never mutated after construction, which is
   // what makes the unmodifiable view returned by `asSet` safe to share.
@@ -308,9 +323,8 @@ final class NonEmptySet<T> extends NonEmptyIterable<T> {
 extension IterableToNonEmptySetExtension<T> on Iterable<T> {
   /// Returns these elements as a [NonEmptySet], or `null` when empty.
   ///
-  /// An existing [NonEmptySet] with the exact element type is returned
-  /// unchanged. Other non-empty iterables are copied, so later changes to
-  /// them are not visible through the result.
+  /// Conversion follows [NonEmptySet.from], including its exact-type reuse
+  /// and eager copy behavior.
   ///
   /// ```dart
   /// [1, 2, 1].toNonEmptySetOrNull(); // {1, 2}
@@ -328,23 +342,22 @@ extension IterableToNonEmptySetExtension<T> on Iterable<T> {
 
   /// Returns these elements as an [Option] of [NonEmptySet].
   ///
-  /// Conversion follows [toNonEmptySetOrNull], including its reuse behavior.
+  /// Equivalent to [NonEmptySet.from], including its exact-type reuse and
+  /// eager copy behavior.
   ///
   /// ```dart
   /// [1, 2].toNonEmptySetOrNone(); // Option.Some({1, 2})
   /// <int>[].toNonEmptySetOrNone(); // Option.None
   /// ```
   @useResult
-  Option<NonEmptySet<T>> toNonEmptySetOrNone() =>
-      toNonEmptySetOrNull().toOption();
+  Option<NonEmptySet<T>> toNonEmptySetOrNone() => NonEmptySet.from(this);
 
   /// Returns these elements as a [NonEmptySet].
   ///
-  /// Conversion follows [toNonEmptySetOrNull], including its reuse behavior.
-  ///
-  /// Throws a [StateError] when this iterable is empty. Prefer
-  /// [toNonEmptySetOrNull] or [toNonEmptySetOrNone] when emptiness is a
-  /// normal outcome.
+  /// Conversion follows [NonEmptySet.from], including its exact-type reuse
+  /// and eager copy behavior. Throws a [StateError] when this iterable is
+  /// empty. Prefer [toNonEmptySetOrNull] or [toNonEmptySetOrNone] when
+  /// emptiness is a normal outcome.
   ///
   /// ```dart
   /// [1, 2].toNonEmptySetOrThrow(); // {1, 2}

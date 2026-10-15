@@ -21,7 +21,8 @@ types just to complete a functional programming toolkit.
 The existing foundation is:
 
 - `Unit`: one meaningful value with no payload.
-- `Option<T>`: an explicitly present or absent non-nullable value.
+- `Option<T>`: an explicitly present or absent value. The payload may be
+  nullable; `Some(null)` differs from `None`.
 - `NonEmptyIterable<T>`: the sealed base for non-empty lists and sets.
 - `NonEmptyList<T>`: an immutable, ordered list with at least one element.
 - `NonEmptySet<T>`: an immutable set with at least one element, keeping unique
@@ -31,6 +32,11 @@ The existing foundation is:
 
 `NonEmptyMap` remains separate from `NonEmptyIterable`, just as Dart's `Map`
 is not an `Iterable`. It exposes keys, values, and entries explicitly.
+
+Presence-preserving `OrNone` lookups connect Dart iterables and maps to
+`Option`. Non-empty collections also provide static `from` methods returning
+`Option`, alongside their conversion extensions. `fromNullable` and
+`toOption()` remain deliberate conversions from `null` to absence.
 
 ## 3. Planned value types
 
@@ -70,8 +76,9 @@ input returns `Some` containing the validated value; an invalid input returns
 `None`. Private constructors must only receive already-validated values.
 Validation must work in release builds, not rely on assertions.
 
-Start without throwing or unsafe creation APIs. Consider additional entry
-points only when a concrete use case justifies them, with explicit contracts.
+For the planned value types, start without throwing or unsafe creation APIs.
+Consider additional entry points only when a concrete use case justifies them,
+with explicit contracts.
 An operation returns the same value type only if it preserves its invariant;
 otherwise, expose the underlying result or validate it into an `Option`.
 
