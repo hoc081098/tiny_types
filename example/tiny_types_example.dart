@@ -20,7 +20,7 @@ Future<void> main() async {
       deliveryFields.getOrNone('note').getOrElse(() => 'Leave at reception');
 
   // --------- Non-empty cart ---------
-  final cart = NonEmptyList.from(rawItems).getOrNull();
+  final cart = rawItems.toNonEmptyListOrNull();
   if (cart == null) {
     _log('Cart is empty; nothing to save.');
     return;

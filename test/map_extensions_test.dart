@@ -106,16 +106,6 @@ void main() {
         throwsA(same(error)),
       );
     });
-
-    test('non-empty conversions propagate errors while copying a map', () {
-      final error = StateError('Input failed');
-      final values = _ThrowingMap(error, failContainsKey: false);
-
-      expect(() => NonEmptyMap.from(values), throwsA(same(error)));
-      expect(values.toNonEmptyMapOrNull, throwsA(same(error)));
-      expect(values.toNonEmptyMapOrNone, throwsA(same(error)));
-      expect(values.toNonEmptyMapOrThrow, throwsA(same(error)));
-    });
   });
 }
 

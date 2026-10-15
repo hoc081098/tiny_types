@@ -6,9 +6,9 @@ part of 'non_empty_iterable.dart';
 /// ## Creating a list
 ///
 /// [NonEmptyList.of] takes a required first element, so the result cannot be
-/// empty. [NonEmptyList.from] converts a possibly empty [Iterable] to an
-/// [Option]. The `toNonEmptyListOrNull()`, `toNonEmptyListOrNone()`, and
-/// `toNonEmptyListOrThrow()` extensions are also available.
+/// empty. For a possibly empty [Iterable], [IterableToNonEmptyListExtension]
+/// provides `toNonEmptyListOrNull()`, `toNonEmptyListOrNone()`, and
+/// `toNonEmptyListOrThrow()`.
 ///
 /// ```dart
 /// final recipients = NonEmptyList.of('ada@example.com', tail: [
@@ -59,21 +59,6 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
     Iterable<T> tail = const <Never>[],
   }) =>
       NonEmptyList._wrap([head, ...tail]);
-
-  /// Returns [values] as a [NonEmptyList], or [None] when empty.
-  ///
-  /// An existing [NonEmptyList] with the exact element type [E] is reused.
-  /// Otherwise, [values] is eagerly copied in iteration order, preserving
-  /// duplicates and `null` elements. Later changes to the input are not
-  /// visible through the result. Iteration exceptions propagate.
-  ///
-  /// ```dart
-  /// NonEmptyList.from([1, 2]); // Option.Some([1, 2])
-  /// NonEmptyList.from(<int>[]); // Option.None
-  /// ```
-  @useResult
-  static Option<NonEmptyList<E>> from<E>(Iterable<E> values) =>
-      values.toNonEmptyListOrNull().toOption();
 
   // Never handed out directly, and never mutated after construction, which is
   // what makes the unmodifiable view returned by `asList` safe to share.
@@ -354,8 +339,10 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 extension IterableToNonEmptyListExtension<T> on Iterable<T> {
   /// Returns these elements as a [NonEmptyList], or `null` when empty.
   ///
-  /// Conversion follows [NonEmptyList.from], including its exact-type reuse
-  /// and eager copy behavior.
+  /// An existing [NonEmptyList] with the exact element type [T] is reused.
+  /// Otherwise, the elements are eagerly copied in iteration order,
+  /// preserving duplicates and `null` elements. Later changes to the input
+  /// are not visible through the result. Iteration exceptions propagate.
   ///
   /// ```dart
   /// [1, 2].toNonEmptyListOrNull(); // [1, 2]
@@ -373,19 +360,20 @@ extension IterableToNonEmptyListExtension<T> on Iterable<T> {
 
   /// Returns these elements as an [Option] of [NonEmptyList].
   ///
-  /// Equivalent to [NonEmptyList.from], including its exact-type reuse and
-  /// eager copy behavior.
+  /// Returns [None] when empty. Conversion follows [toNonEmptyListOrNull],
+  /// including its exact-type reuse and eager copy behavior.
   ///
   /// ```dart
   /// [1, 2].toNonEmptyListOrNone(); // Option.Some([1, 2])
   /// <int>[].toNonEmptyListOrNone(); // Option.None
   /// ```
   @useResult
-  Option<NonEmptyList<T>> toNonEmptyListOrNone() => NonEmptyList.from(this);
+  Option<NonEmptyList<T>> toNonEmptyListOrNone() =>
+      toNonEmptyListOrNull().toOption();
 
   /// Returns these elements as a [NonEmptyList].
   ///
-  /// Conversion follows [NonEmptyList.from], including its exact-type reuse
+  /// Conversion follows [toNonEmptyListOrNull], including its exact-type reuse
   /// and eager copy behavior. Throws a [StateError] when this iterable is
   /// empty. Prefer [toNonEmptyListOrNull] or [toNonEmptyListOrNone] when
   /// emptiness is a normal outcome.

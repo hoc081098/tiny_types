@@ -120,16 +120,16 @@ final prices = NonEmptyMap.of(('coffee', 4.50), tail: {'tea': 3.00});
 
 ### 4.2. Convert possibly empty inputs
 
-Use the static `from` methods to get an `Option`; empty inputs return `None`:
+Use conversion extensions and choose how to handle an empty input: `OrNull`
+returns `null`, `OrNone` returns `None`, and `OrThrow` throws a `StateError`.
 
 ```dart
-NonEmptyList.from([1, 2]); // Option.Some([1, 2])
-NonEmptySet.from([1, 2, 1]); // Option.Some({1, 2})
-NonEmptyMap.from({'a': 1}); // Option.Some({a: 1})
+[1, 2].toNonEmptyListOrNull(); // [1, 2]
+[1, 2, 1].toNonEmptySetOrNone(); // Option.Some({1, 2})
+<String, int>{'a': 1}.toNonEmptyMapOrThrow(); // {a: 1}
 ```
 
-Each collection also has `OrNull`, `OrNone`, and `OrThrow` conversions for
-chaining:
+All three suffixes are available for each conversion:
 
 - `Iterable.toNonEmptyListOr...()` preserves order and duplicates.
 - `Iterable.toNonEmptySetOr...()` keeps the first occurrence of each value.

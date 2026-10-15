@@ -34,8 +34,8 @@ The existing foundation is:
 is not an `Iterable`. It exposes keys, values, and entries explicitly.
 
 Presence-preserving `OrNone` lookups connect Dart iterables and maps to
-`Option`. Non-empty collections also provide static `from` methods returning
-`Option`, alongside their conversion extensions. `fromNullable` and
+`Option`. Non-empty collection conversions offer `OrNull`, `OrNone`, and
+`OrThrow` variants to handle possibly empty inputs. `fromNullable` and
 `toOption()` remain deliberate conversions from `null` to absence.
 
 ## 3. Planned value types
@@ -64,7 +64,8 @@ Use ordinary Dart classes throughout:
 - Do not use extension types. Their erased representation cannot provide the
   runtime type distinction required by this design.
 
-Prefer safe static factory methods that return `Option`:
+For the planned value types, prefer safe static factory methods that return
+`Option`:
 
 ```dart
 PositiveInt.from(1); // Option<PositiveInt>
