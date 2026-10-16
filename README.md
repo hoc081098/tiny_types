@@ -1,7 +1,17 @@
 # tiny_types
 
+> **Author:** [Petrus Nguyễn Thái Học](https://github.com/hoc081098)
+
 `tiny_types` provides lightweight, reusable types that are useful in everyday
 Dart applications without requiring a full functional programming library.
+
+[![Dart CI](https://github.com/hoc081098/tiny_types/actions/workflows/dart.yml/badge.svg?branch=main)](https://github.com/hoc081098/tiny_types/actions/workflows/dart.yml)
+[![pub version](https://img.shields.io/pub/v/tiny_types)](https://pub.dev/packages/tiny_types)
+[![pub prerelease](https://img.shields.io/pub/v/tiny_types?include_prereleases)](https://pub.dev/packages/tiny_types)
+[![codecov](https://codecov.io/gh/hoc081098/tiny_types/branch/main/graph/badge.svg?token=OzKPRKzpgF)](https://codecov.io/gh/hoc081098/tiny_types)
+[![License: MIT](https://img.shields.io/github/license/hoc081098/tiny_types?color=4EB1BA)](https://opensource.org/licenses/MIT)
+[![Style: lints](https://img.shields.io/badge/style-lints-40c4ff.svg)](https://pub.dev/packages/lints)
+[![Hits](https://hits.sh/github.com/hoc081098/tiny_types.svg)](https://hits.sh/github.com/hoc081098/tiny_types/)
 
 - `Option<T>` represents a value that **may be absent**.
 - `Unit` represents a **meaningful result with no payload**.
