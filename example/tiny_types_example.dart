@@ -1,23 +1,23 @@
 import 'package:tiny_types/tiny_types.dart';
 
-final _savedOrders = <List<String>>[];
-
 Future<void> main() async {
-  // --------- Input from a checkout form ---------
+  // --------- Checkout form input ---------
   final customerName = _customerNameFromForm();
   final rawItems = <String>['coffee', 'tea', 'coffee'];
+  final deliveryFields = <String, String?>{'note': null};
 
-  // --------- Optional customer name ---------
+  // --------- Optional customer details ---------
   final displayName = customerName
       .toOption()
       .map((name) => name.trim())
       .filter((name) => name.isNotEmpty)
       .getOrElse(() => 'Guest');
 
-  // --------- Delivery note: missing uses a default, null clears it ---------
-  final deliveryFields = <String, String?>{'note': null};
-  final deliveryNote =
-      deliveryFields.getOrNone('note').getOrElse(() => 'Leave at reception');
+  // A missing note uses the default; an explicit null clears the note.
+  final deliveryNote = deliveryFields.getOrNone('note').fold(
+        ifSome: (n) => n ?? '<cleared>',
+        ifNone: () => 'Leave at reception',
+      );
 
   // --------- Non-empty cart ---------
   final cart = rawItems.toNonEmptyListOrNull();
@@ -29,25 +29,24 @@ Future<void> main() async {
   final lines = cart.mapIndexedToNonEmptyList(
     (index, item) => '${index + 1}. $item',
   );
-  final products = cart.toNonEmptySet();
+  final uniqueProducts = cart.toNonEmptySet();
   final teaInCart = cart.firstWhereOrNone((item) => item == 'tea');
 
-  // --------- Price catalog and order total ---------
-  final prices = NonEmptyMap.of(('coffee', 4.50), tail: const {'tea': 3.00});
-  final priceView = prices.asMap();
-  final total = cart.fold<double>(
-    0,
-    (sum, item) =>
-        sum +
-        priceView.getOrNone(item).getOrElse(
-              () => throw StateError('Unknown product: $item'),
-            ),
+  // --------- Prices and order total ---------
+  final prices = NonEmptyMap.of(
+    ('coffee', 4.50),
+    tail: const {'tea': 3.00},
   );
+  final total = cart.fold<double>(0, (sum, item) {
+    final price = prices[item] ?? (throw StateError('Unknown product: $item'));
+    return sum + price;
+  });
 
+  // --------- Order summary ---------
   _log('Customer: $displayName');
-  _log('Delivery note: ${deliveryNote ?? '(none)'}');
+  _log('Delivery note: $deliveryNote');
   _log('Items: ${lines.join(', ')}');
-  _log('Unique products: ${products.join(', ')}');
+  _log('Unique products: ${uniqueProducts.join(', ')}');
   _log('Tea discount eligible: ${teaInCart.isSome}');
   _log('Total: \$${total.toStringAsFixed(2)}');
 
@@ -60,6 +59,8 @@ Future<void> main() async {
 String? _customerNameFromForm() => ' Ada ';
 
 // --------- In-memory order store ---------
+final _savedOrders = <List<String>>[];
+
 Future<Unit> _saveOrder(NonEmptyList<String> cart) {
   _savedOrders.add(cart.toList());
   return Unit.future;
