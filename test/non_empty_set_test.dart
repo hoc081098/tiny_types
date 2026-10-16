@@ -75,6 +75,25 @@ void main() {
       });
     });
 
+    group('fold', () {
+      test('combines elements with an initial value', () {
+        final set = NonEmptySet.of(1, tail: const [2, 3]);
+
+        expect(set.fold(10, (total, value) => total + value), 16);
+      });
+
+      test('supports side-effect-only callbacks', () {
+        final visited = <int>[];
+
+        NonEmptySet.of(2, tail: const [1, 2, 3]).fold<void>(
+          null,
+          (_, value) => visited.add(value),
+        );
+
+        expect(visited, [2, 1, 3]);
+      });
+    });
+
     group('set views', () {
       test('asSet returns an unmodifiable view', () {
         final set = NonEmptySet.of(1, tail: const [2]);

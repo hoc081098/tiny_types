@@ -74,6 +74,25 @@ void main() {
       });
     });
 
+    group('fold', () {
+      test('combines elements with an initial value', () {
+        final list = NonEmptyList.of(1, tail: const [2, 3]);
+
+        expect(list.fold(10, (total, value) => total + value), 16);
+      });
+
+      test('supports side-effect-only callbacks', () {
+        final visited = <int>[];
+
+        NonEmptyList.of(2, tail: const [1, 2, 3]).fold<void>(
+          null,
+          (_, value) => visited.add(value),
+        );
+
+        expect(visited, [2, 1, 2, 3]);
+      });
+    });
+
     group('list-like searches', () {
       final list = NonEmptyList.of(1, tail: const [2, 1, 3]);
 
