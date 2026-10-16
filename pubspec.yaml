@@ -4,9 +4,19 @@ description: >-
   Includes Option, Unit, and non-empty collections.
 version: 1.0.0
 repository: https://github.com/hoc081098/tiny_types
+issue_tracker: https://github.com/hoc081098/tiny_types/issues
+funding:
+  - https://www.buymeacoffee.com/hoc081098
 
 environment:
   sdk: ^3.0.0
+
+topics:
+  - hoc081098
+  - functional-programming
+  - fpdart
+  - option
+  - collections
 
 dependencies:
   meta: ^1.7.0
