@@ -21,8 +21,29 @@ dependencies:
 
 ## 2. Option
 
-Use `Option<T>` when absence is part of the API instead of passing `null`
-through every step.
+Use `Option<T>` when absence is part of the API: `Some<T>` contains a value,
+and `None` contains no value.
+
+### 2.1. Creation and nullability
+
+**Presence and nullability are independent.** `Option<String>` has a
+non-nullable payload; `Option<String?>` may contain `null`.
+
+`Option.some(value)` and `value.some()` wrap a value unchanged.
+`Option.fromNullable(value)` and `value.toOption()` treat `null` as absence.
+Use `Option.none()` to create an absent option explicitly.
+
+```dart
+const Option<String?> note = Option.some(null); // Present: Some(null)
+final Option<String> name = Option.fromNullable(null); // Absent: None
+```
+
+### 2.2. Transforming and consuming
+
+- `map` transforms the contained value while preserving absence.
+- `flatMap` chains an option-returning operation.
+- `filter` keeps the contained value when its predicate returns `true`;
+  otherwise, it returns `None`.
 
 ```dart
 String displayName(String? input) => input
@@ -35,7 +56,36 @@ displayName(' Ada '); // Ada
 displayName(null); // Guest
 ```
 
-`fold` handles both `Some` and `None` when each case needs different behavior.
+- `fold` produces a value by handling both variants.
+- `getOrElse` returns the contained value or a lazily computed fallback for
+  `None`.
+- `or` returns this option when it is `Some`, or an eagerly evaluated
+  alternative when it is `None`.
+- `orElse` lazily computes an alternative `Option` for `None`.
+- `getOrNull()` returns the contained value, or `null` for `None`. It cannot
+  distinguish `Some(null)` from `None`.
+
+### 2.3. Collection lookups
+
+Lookups preserve presence, even when the selected value is `null`:
+
+```dart
+<int?>[null].firstOrNone; // Option.Some(null)
+<int?>[].firstOrNone; // Option.None
+
+final fields = <String, String?>{'note': null};
+fields.getOrNone('note'); // Option.Some(null)
+fields.getOrNone('missing'); // Option.None
+```
+
+- `Iterable.firstOrNone`, `lastOrNone`, and `singleOrNone` are getters.
+- `Iterable.firstWhereOrNone`, `lastWhereOrNone`, and `singleWhereOrNone`
+  accept a predicate.
+- `Map.getOrNone(key)` uses the map's own key equality rules.
+
+The `single` lookups return `None` unless exactly one element or match exists.
+Iterable lookups do not materialize a collection. Iterator and predicate
+exceptions propagate.
 
 ## 3. Unit
 
@@ -70,7 +120,16 @@ final prices = NonEmptyMap.of(('coffee', 4.50), tail: {'tea': 3.00});
 
 ### 4.2. Convert possibly empty inputs
 
-Each collection has `OrNull`, `OrNone`, and `OrThrow` conversions:
+Use conversion extensions and choose how to handle an empty input: `OrNull`
+returns `null`, `OrNone` returns `None`, and `OrThrow` throws a `StateError`.
+
+```dart
+[1, 2].toNonEmptyListOrNull(); // [1, 2]
+[1, 2, 1].toNonEmptySetOrNone(); // Option.Some({1, 2})
+<String, int>{'a': 1}.toNonEmptyMapOrThrow(); // {a: 1}
+```
+
+All three suffixes are available for each conversion:
 
 - `Iterable.toNonEmptyListOr...()` preserves order and duplicates.
 - `Iterable.toNonEmptySetOr...()` keeps the first occurrence of each value.

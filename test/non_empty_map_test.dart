@@ -254,6 +254,50 @@ void main() {
         expect(result[first], 2);
       });
 
+      test('conversion does not retain custom key equality', () {
+        final source = LinkedHashMap<String, int>(
+          equals: (left, right) => left.toLowerCase() == right.toLowerCase(),
+          hashCode: (key) => key.toLowerCase().hashCode,
+        )..['Ada'] = 1;
+
+        final result = source.toNonEmptyMapOrThrow();
+
+        expect(source.containsKey('ADA'), isTrue);
+        expect(result.containsKey('Ada'), isTrue);
+        expect(result.containsKey('ADA'), isFalse);
+      });
+
+      test('conversions preserve nullable keys and values', () {
+        final source = <String?, int?>{null: null, 'a': 1};
+        final results = [
+          source.toNonEmptyMapOrNull()!,
+          source.toNonEmptyMapOrNone().getOrNull()!,
+          source.toNonEmptyMapOrThrow(),
+        ];
+
+        for (final result in results) {
+          expect(result.keys, [null, 'a']);
+          expect(result.asMap(), {null: null, 'a': 1});
+        }
+        expect(<String, int?>{'a': null}.toNonEmptyMapOrNone().isSome, isTrue);
+      });
+
+      test('conversions copy covariantly widened keys and values', () {
+        final Map<Object?, num?> source = <String, int>{'a': 1};
+        final results = [
+          source.toNonEmptyMapOrNull()!,
+          source.toNonEmptyMapOrNone().getOrNull()!,
+          source.toNonEmptyMapOrThrow(),
+        ];
+
+        for (final result in results) {
+          expect(
+            result.plus((null, 2.5)).plus((2, null)).asMap(),
+            {'a': 1, null: 2.5, 2: null},
+          );
+        }
+      });
+
       test('OrNone returns some or none', () {
         expect({'a': 1}.toNonEmptyMapOrNone().getOrNull()!.asMap(), {'a': 1});
         expect(<String, int>{}.toNonEmptyMapOrNone().isNone, isTrue);
@@ -262,6 +306,15 @@ void main() {
       test('OrThrow rejects an empty map', () {
         expect({'a': 1}.toNonEmptyMapOrThrow().asMap(), {'a': 1});
         expect(<String, int>{}.toNonEmptyMapOrThrow, throwsStateError);
+      });
+
+      test('conversions propagate errors while copying a map', () {
+        final error = StateError('Input failed');
+        final source = _ThrowingMap(error);
+
+        expect(source.toNonEmptyMapOrNull, throwsA(same(error)));
+        expect(source.toNonEmptyMapOrNone, throwsA(same(error)));
+        expect(source.toNonEmptyMapOrThrow, throwsA(same(error)));
       });
     });
 
@@ -328,6 +381,18 @@ void main() {
       });
     });
   });
+}
+
+final class _ThrowingMap extends UnmodifiableMapBase<String, int> {
+  _ThrowingMap(this._error);
+
+  final StateError _error;
+
+  @override
+  int? operator [](Object? key) => throw _error;
+
+  @override
+  Iterable<String> get keys => const ['a'];
 }
 
 @immutable

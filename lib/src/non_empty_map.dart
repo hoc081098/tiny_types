@@ -9,8 +9,9 @@ import 'option.dart';
 /// ## Creating a map
 ///
 /// [NonEmptyMap.of] requires a first key-value pair. For a possibly empty
-/// [Map], [MapToNonEmptyMapExtension] provides `toNonEmptyMapOrNull()`,
-/// `toNonEmptyMapOrNone()`, and `toNonEmptyMapOrThrow()`.
+/// [Map], [MapToNonEmptyMapExtension] provides
+/// `toNonEmptyMapOrNull()`, `toNonEmptyMapOrNone()`, and
+/// `toNonEmptyMapOrThrow()`.
 ///
 /// Entries keep their first insertion position. A later value for an equal key
 /// replaces the earlier value without moving that key. Input maps are copied
@@ -210,8 +211,15 @@ final class NonEmptyMap<K, V> {
 extension MapToNonEmptyMapExtension<K, V> on Map<K, V> {
   /// Returns these entries as a [NonEmptyMap], or `null` when empty.
   ///
-  /// The input is copied before checking emptiness. Later changes to this map
-  /// are not visible through the result.
+  /// The input is eagerly copied into an insertion-ordered map before checking
+  /// emptiness, preserving `null` keys and values. Later changes to the input
+  /// are not visible through the result. Custom key equality and ordering are
+  /// not retained. Errors while reading the input propagate.
+  ///
+  /// ```dart
+  /// <String, int>{'a': 1}.toNonEmptyMapOrNull(); // {a: 1}
+  /// <String, int>{}.toNonEmptyMapOrNull(); // null
+  /// ```
   @useResult
   NonEmptyMap<K, V>? toNonEmptyMapOrNull() {
     final entries = Map<K, V>.of(this);
@@ -220,16 +228,27 @@ extension MapToNonEmptyMapExtension<K, V> on Map<K, V> {
 
   /// Returns these entries as an [Option] of [NonEmptyMap].
   ///
-  /// Conversion follows [toNonEmptyMapOrNull].
+  /// Returns [None] when empty. Conversion follows [toNonEmptyMapOrNull],
+  /// including its eager copy behavior.
+  ///
+  /// ```dart
+  /// <String, int>{'a': 1}.toNonEmptyMapOrNone(); // Option.Some({a: 1})
+  /// <String, int>{}.toNonEmptyMapOrNone(); // Option.None
+  /// ```
   @useResult
   Option<NonEmptyMap<K, V>> toNonEmptyMapOrNone() =>
       toNonEmptyMapOrNull().toOption();
 
   /// Returns these entries as a [NonEmptyMap].
   ///
-  /// Throws a [StateError] when this map is empty. Prefer
+  /// Conversion follows [toNonEmptyMapOrNull], including its eager copy
+  /// behavior. Throws a [StateError] when this map is empty. Prefer
   /// [toNonEmptyMapOrNull] or [toNonEmptyMapOrNone] when emptiness is a normal
   /// outcome.
+  ///
+  /// ```dart
+  /// <String, int>{'a': 1}.toNonEmptyMapOrThrow(); // {a: 1}
+  /// ```
   @useResult
   NonEmptyMap<K, V> toNonEmptyMapOrThrow() =>
       toNonEmptyMapOrNull() ??

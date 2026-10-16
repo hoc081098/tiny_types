@@ -339,9 +339,10 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
 extension IterableToNonEmptyListExtension<T> on Iterable<T> {
   /// Returns these elements as a [NonEmptyList], or `null` when empty.
   ///
-  /// An existing [NonEmptyList] with the exact element type is returned
-  /// unchanged. Other non-empty iterables are copied, so later changes to
-  /// them are not visible through the result.
+  /// An existing [NonEmptyList] with the exact element type [T] is reused.
+  /// Otherwise, the elements are eagerly copied in iteration order,
+  /// preserving duplicates and `null` elements. Later changes to the input
+  /// are not visible through the result. Iteration exceptions propagate.
   ///
   /// ```dart
   /// [1, 2].toNonEmptyListOrNull(); // [1, 2]
@@ -359,7 +360,8 @@ extension IterableToNonEmptyListExtension<T> on Iterable<T> {
 
   /// Returns these elements as an [Option] of [NonEmptyList].
   ///
-  /// Conversion follows [toNonEmptyListOrNull], including its reuse behavior.
+  /// Returns [None] when empty. Conversion follows [toNonEmptyListOrNull],
+  /// including its exact-type reuse and eager copy behavior.
   ///
   /// ```dart
   /// [1, 2].toNonEmptyListOrNone(); // Option.Some([1, 2])
@@ -371,11 +373,10 @@ extension IterableToNonEmptyListExtension<T> on Iterable<T> {
 
   /// Returns these elements as a [NonEmptyList].
   ///
-  /// Conversion follows [toNonEmptyListOrNull], including its reuse behavior.
-  ///
-  /// Throws a [StateError] when this iterable is empty. Prefer
-  /// [toNonEmptyListOrNull] or [toNonEmptyListOrNone] when emptiness is a
-  /// normal outcome.
+  /// Conversion follows [toNonEmptyListOrNull], including its exact-type reuse
+  /// and eager copy behavior. Throws a [StateError] when this iterable is
+  /// empty. Prefer [toNonEmptyListOrNull] or [toNonEmptyListOrNone] when
+  /// emptiness is a normal outcome.
   ///
   /// ```dart
   /// [1, 2].toNonEmptyListOrThrow(); // [1, 2]

@@ -277,7 +277,7 @@ void main() {
       });
 
       test('toNonEmptySetOrNull selects a set or null', () {
-        expect([1, 2, 1].toNonEmptySetOrNull(), {1, 2});
+        expect([2, 1, 2, 3].toNonEmptySetOrNull()!.toList(), [2, 1, 3]);
         expect(<int>[].toNonEmptySetOrNull(), isNull);
       });
 
@@ -294,28 +294,25 @@ void main() {
         final set = NonEmptySet.of(1, tail: const [2]);
         final Iterable<int> source = set;
 
-        expect(
-          identical(source.toNonEmptySetOrNull(), set),
-          isTrue,
-        );
-        expect(
-          identical(source.toNonEmptySetOrNone().getOrNull(), set),
-          isTrue,
-        );
-        expect(
-          identical(source.toNonEmptySetOrThrow(), set),
-          isTrue,
-        );
+        expect(source.toNonEmptySetOrNull(), same(set));
+        expect(source.toNonEmptySetOrNone().getOrNull(), same(set));
+        expect(source.toNonEmptySetOrThrow(), same(set));
       });
 
-      test('Iterable conversion copies a covariantly widened set', () {
+      test('Iterable conversions copy a covariantly widened set', () {
         final integers = NonEmptySet<int>.of(1);
-        final Iterable<num> source = integers;
-        final result = source.toNonEmptySetOrNull()!;
+        final Iterable<num?> source = integers;
+        final results = [
+          source.toNonEmptySetOrNull()!,
+          source.toNonEmptySetOrNone().getOrNull()!,
+          source.toNonEmptySetOrThrow(),
+        ];
 
-        expect(identical(result, integers), isFalse);
-        expect(result.plus(1.5), {1, 1.5});
-        expect(result.toSet()..add(2.5), {1, 2.5});
+        for (final result in results) {
+          expect(result, isNot(same(integers)));
+          expect(result.plus(1.5).plus(null).toList(), [1, 1.5, null]);
+          expect(result.toSet()..add(2.5), {1, 2.5});
+        }
       });
 
       test('toNonEmptySetOrNone selects some or none', () {
@@ -326,6 +323,52 @@ void main() {
       test('toNonEmptySetOrThrow throws for an empty iterable', () {
         expect([1, 2].toNonEmptySetOrThrow(), {1, 2});
         expect(<int>[].toNonEmptySetOrThrow, throwsStateError);
+      });
+
+      test('Iterable conversions preserve and deduplicate null elements', () {
+        final source = <int?>[null, 1, null];
+        final results = [
+          source.toNonEmptySetOrNull()!,
+          source.toNonEmptySetOrNone().getOrNull()!,
+          source.toNonEmptySetOrThrow(),
+        ];
+
+        for (final result in results) {
+          expect(result.toList(), [null, 1]);
+        }
+        expect(<int?>[null].toNonEmptySetOrNone().isSome, isTrue);
+      });
+
+      test('eagerly consumes a lazy input once', () {
+        final seen = <int>[];
+        Iterable<int> values() sync* {
+          if (seen.isNotEmpty) {
+            throw StateError('Must not traverse twice');
+          }
+          for (final value in [2, 1, 2]) {
+            seen.add(value);
+            yield value;
+          }
+        }
+
+        final result = values().toNonEmptySetOrNone().getOrNull()!;
+
+        expect(seen, [2, 1, 2]);
+        expect(result.toList(), [2, 1]);
+        expect(seen, [2, 1, 2]);
+      });
+
+      test('Iterable conversions propagate errors after reading an element',
+          () {
+        final error = StateError('Input failed');
+        Iterable<int> values() sync* {
+          yield 1;
+          throw error;
+        }
+
+        expect(values().toNonEmptySetOrNull, throwsA(same(error)));
+        expect(values().toNonEmptySetOrNone, throwsA(same(error)));
+        expect(values().toNonEmptySetOrThrow, throwsA(same(error)));
       });
     });
 
