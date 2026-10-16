@@ -355,7 +355,6 @@ void main() {
 
         expect(seen, [2, 1, 2]);
         expect(result.toList(), [2, 1]);
-        expect(result.toList(), [2, 1]);
         expect(seen, [2, 1, 2]);
       });
 

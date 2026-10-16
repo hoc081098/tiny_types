@@ -419,7 +419,6 @@ void main() {
 
         expect(seen, [1, 2]);
         expect(result, [1, 2]);
-        expect(result, [1, 2]);
         expect(seen, [1, 2]);
       });
 
