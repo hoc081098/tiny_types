@@ -203,10 +203,10 @@ Use `castToNonEmptySet<R>()` for a set. Both conversions check existing
 elements eagerly and throw a `TypeError` if a cast fails. For maps, use
 `castToNonEmptyMap<RK, RV>()` before adding wider key or value types.
 
-See the [runnable checkout example](example/tiny_types_example.dart) for all
-five types together.
+See the [runnable checkout example][checkout-example] for all five types
+together.
 
-See the [roadmap](ROADMAP.md) for the package's scope and planned value types.
+See the [roadmap] for the package's scope and planned value types.
 
 ## 5. License
 
@@ -215,3 +215,7 @@ MIT License
 
 Copyright (c) 2026 Petrus Nguyễn Thái Học
 ```
+
+[checkout-example]:
+  https://github.com/hoc081098/tiny_types/blob/main/example/tiny_types_example.dart
+[roadmap]: https://github.com/hoc081098/tiny_types/blob/main/ROADMAP.md

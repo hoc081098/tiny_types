@@ -229,7 +229,6 @@ final class NonEmptyList<T> extends NonEmptyIterable<T> {
   T reduce(T Function(T value, T element) combine) => _elements.reduce(combine);
 
   @override
-  @useResult
   R fold<R>(R initialValue, R Function(R value, T element) combine) =>
       _elements.fold(initialValue, combine);
 
