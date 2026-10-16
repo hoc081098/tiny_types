@@ -1,4 +1,4 @@
-## 1.0.0 - 2026-10-16
+## 1.0.0 - Oct 16, 2026
 
 Initial stable release. Requires Dart `^3.0.0`.
 
